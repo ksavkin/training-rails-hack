@@ -6,6 +6,9 @@ function formatCapturedAt(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
+/** Raw DB severity at/above this triggers real-time critical alert + map focus (1–10 scale). */
+export const CRITICAL_ALERT_SEVERITY_THRESHOLD = 7;
+
 /**
  * Map numeric severity (e.g. 1–10 score) to heatmap / marker band used by the UI.
  * Adjust here if your `pins.severity` uses a different scale.
@@ -37,16 +40,35 @@ function resolveSevForRow(row) {
 }
 
 /**
+ * True when a realtime INSERT or UPDATE should surface the critical UI (not on initial fetch).
+ * Fires for new rows at/above threshold, or when severity crosses up into the critical band.
+ */
+export function shouldTriggerCriticalRealtimeAlert(prevRow, nextRow) {
+  if (!nextRow) return false;
+  if (rowLooksResolved(nextRow)) return false;
+  const next = Number(nextRow.severity);
+  if (!Number.isFinite(next) || next < CRITICAL_ALERT_SEVERITY_THRESHOLD) return false;
+
+  const prevSev = prevRow != null ? Number(prevRow.severity) : NaN;
+  const hadCriticalAlready = Number.isFinite(prevSev) && prevSev >= CRITICAL_ALERT_SEVERITY_THRESHOLD;
+  if (hadCriticalAlready) return false;
+
+  return true;
+}
+
+/**
  * Maps a `pins` table row (your Supabase schema) to the shape used by the map and popups.
  * @param {Record<string, unknown>} row
  */
 export function rowToPin(row) {
   const id = row.id != null ? String(row.id) : '';
+  const severityNum = row.severity != null ? Number(row.severity) : null;
   return {
     _rowId: id,
     id,
     line: row.line_id != null ? String(row.line_id) : '',
     sev: resolveSevForRow(row),
+    severityNum: Number.isFinite(severityNum) ? severityNum : null,
     type: row.defect_type != null ? String(row.defect_type) : '',
     lat: Number(row.lat),
     lon: Number(row.lon),

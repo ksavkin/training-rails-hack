@@ -13,13 +13,6 @@ import CriticalAlert, { playBeep } from './components/CriticalAlert.jsx';
 import MapFocusPopup from './components/MapFocusPopup.jsx';
 
 export default function App() {
-  const {
-    pins,
-    openPinCount,
-    resolvedPinCount,
-    status: pinsStatus,
-    error: pinsError
-  } = useRailPins();
   const [page, setPage] = useState('dashboard');
   const [line, setLine] = useState('all');
   const [videoOpen, setVideoOpen] = useState(false);
@@ -27,6 +20,7 @@ export default function App() {
   const [resolved, setResolved] = useState(false);
   const [critCount, setCritCount] = useState(3);
   const [bannerOpen, setBannerOpen] = useState(false);
+  const [criticalBannerDetail, setCriticalBannerDetail] = useState(null);
   const [flashKey, setFlashKey] = useState(0);
   const [mapFocus, setMapFocus] = useState({ open: false, mode: null, data: null });
   const mapRef = useRef(null);
@@ -35,6 +29,34 @@ export default function App() {
     setPage(p);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
+
+  const onCriticalSeverityPin = useCallback((pin) => {
+    goPage('dashboard');
+    setFlashKey((k) => k + 1);
+    playBeep();
+    setBannerOpen(true);
+    const parts = [
+      pin.type,
+      pin.mp && `MP ${pin.mp}`,
+      pin.severityNum != null && `severity ${pin.severityNum}/10`
+    ].filter(Boolean);
+    setCriticalBannerDetail(parts.length ? parts.join(' · ').toUpperCase() : null);
+    setTimeout(() => setBannerOpen(false), 6000);
+    setTimeout(() => {
+      if (Number.isFinite(pin.lat) && Number.isFinite(pin.lon)) {
+        mapRef.current?.focusOnPin?.({ lat: pin.lat, lon: pin.lon });
+      }
+    }, 250);
+    setCritCount((c) => c + 1);
+  }, [goPage]);
+
+  const {
+    pins,
+    openPinCount,
+    resolvedPinCount,
+    status: pinsStatus,
+    error: pinsError
+  } = useRailPins({ onCriticalSeverity: onCriticalSeverityPin });
 
   const openDetail = useCallback(() => goPage('defect'), [goPage]);
   const openVideo = useCallback(() => setVideoOpen(true), []);
@@ -57,6 +79,7 @@ export default function App() {
     setFlashKey((k) => k + 1);
     playBeep();
     setBannerOpen(true);
+    setCriticalBannerDetail(null);
     setTimeout(() => setBannerOpen(false), 6000);
     setTimeout(() => mapRef.current?.dropDemoPin(), 250);
     setCritCount((c) => c + 1);
@@ -133,8 +156,12 @@ export default function App() {
       <CriticalAlert
         flashKey={flashKey}
         bannerOpen={bannerOpen}
+        bannerDetail={criticalBannerDetail}
         onInspect={openDetail}
-        onClose={() => setBannerOpen(false)}
+        onClose={() => {
+          setBannerOpen(false);
+          setCriticalBannerDetail(null);
+        }}
       />
       <DispatchModal open={dispatchOpen} onClose={() => setDispatchOpen(false)} />
     </>

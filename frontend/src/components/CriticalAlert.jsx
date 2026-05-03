@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export default function CriticalAlert({ flashKey, bannerOpen, onInspect, onClose }) {
+export default function CriticalAlert({ flashKey, bannerOpen, bannerDetail, onInspect, onClose }) {
   const flashRef = useRef(null);
 
   useEffect(() => {
@@ -27,7 +27,9 @@ export default function CriticalAlert({ flashKey, bannerOpen, onInspect, onClose
           </div>
           <div className="crit-banner-text">
             <div className="crit-banner-title">Critical defect detected</div>
-            <div className="crit-banner-sub">TRANSVERSE CRACK · MP 24+340 · CONF 0.87</div>
+            <div className="crit-banner-sub">
+              {bannerDetail ?? 'TRANSVERSE CRACK · MP 24+340 · CONF 0.87'}
+            </div>
           </div>
           <button
             className="crit-banner-action"
