@@ -16,6 +16,7 @@ export default function Dashboard({
   onOpenMapCamera
 }) {
   const [heatmapOn, setHeatmapOn] = useState(false);
+  const [hoverPreview, setHoverPreview] = useState(true);
 
   return (
     <section className={`page dashboard-page ${active ? 'active' : ''}`}>
@@ -25,6 +26,14 @@ export default function Dashboard({
           <div className="page-sub mono">29 APR 2026 · 4 LINES · 3 DEVICES · 47 KM SCANNED TODAY</div>
         </div>
         <div className="page-actions">
+          <label className="toggle-pill" title="Show pin info on hover instead of click">
+            <input
+              type="checkbox"
+              checked={hoverPreview}
+              onChange={(e) => setHoverPreview(e.target.checked)}
+            />
+            <span>Hover preview</span>
+          </label>
           <button className="btn ghost"><Icon name="i-export" />Export</button>
           <button className="btn primary"><Icon name="i-target" />Live mode</button>
         </div>
@@ -57,6 +66,7 @@ export default function Dashboard({
               pageActive={active}
               lineFilter={lineFilter}
               heatmapEnabled={heatmapOn}
+              hoverPreview={hoverPreview}
               onOpenDefect={onOpenMapDefect}
               onOpenCamera={onOpenMapCamera}
             />
