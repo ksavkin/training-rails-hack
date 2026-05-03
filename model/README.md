@@ -22,3 +22,16 @@
    ```bash
    deactivate
    ```
+6. SCP ONNX file over to Jetson
+   ```bash
+     scp best.onnx beaverhacks@100.92.208.107:/home/beaverhacks/Desktop
+   ```
+7. Compile ONNX file into TensorRT engine file
+```bash
+     /usr/src/tensorrt/bin/trtexec \
+  --onnx=best.onnx \
+  --saveEngine=best.engine \
+  --fp16 \
+  --workspace=4096
+
+   ```
