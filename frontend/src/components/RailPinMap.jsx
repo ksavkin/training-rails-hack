@@ -238,11 +238,12 @@ const RailPinMap = forwardRef(function RailPinMap(
 
     // --- Heatmap (overlay instance + ref only). Toggle lives in a separate useEffect; pins effect updates setData. Do not add camera/train logic here. ---
     const heatCfg = {
-      radius: 2,
+      // scaleRadius:true multiplies radius by 2^zoom (hundreds–thousands of px); keep fixed screen px.
+      radius: 80,
       maxOpacity: 0.34,
       minOpacity: 0.04,
-      blur: 0.78,
-      scaleRadius: true,
+      blur: 0.5,
+      scaleRadius: false,
       useLocalExtrema: true,
       latField: 'lat',
       lngField: 'lng',
@@ -366,6 +367,11 @@ const RailPinMap = forwardRef(function RailPinMap(
   useImperativeHandle(ref, () => ({
     zoomIn: () => mapRef.current?.zoomIn(),
     zoomOut: () => mapRef.current?.zoomOut(),
+    focusOnPin: ({ lat, lon, zoom = 12 }) => {
+      const map = mapRef.current;
+      if (!map || !Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      map.setView([lat, lon], zoom, { animate: true });
+    },
     centerOnTrain: () => {
       const t = train422Ref.current;
       const m = mapRef.current;
