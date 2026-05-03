@@ -28,7 +28,7 @@ CREATE TABLE public.pins (
   lon             double precision NOT NULL,
   milepost        text,
   defect_type     text NOT NULL,
-  severity        integer NOT NULL,
+  severity        numeric(3,1) NOT NULL,
   confidence      real NOT NULL,
   device_id       text NOT NULL,
   frame_id        bigint,
