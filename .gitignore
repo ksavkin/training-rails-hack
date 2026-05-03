@@ -1,0 +1,17 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Bring-your-own training data + run outputs
+data/
+runs/
+
+# Base weights auto-download via ultralytics
+yolo*.pt
+!model/best.pt
