@@ -23,7 +23,7 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
             <div className="title">{isDefect ? `Defect ${data.id}` : `Live camera ${data.id}`}</div>
             <div className="source-info">
               {isDefect
-                ? `MP ${data.mp} · line ${data.line} · conf ${data.conf}`
+                ? `MP ${data.mp} · track ${data.line} · conf ${data.conf}`
                 : `${data.label} · ${data.source}`}
             </div>
           </div>
@@ -45,9 +45,17 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
               )}
             </div>
             <div className="map-focus-meta">
-              <span className={`sev-badge ${data.sev}`}>{fmtSev(data.sev)}</span>
-              <h3>{data.type}</h3>
-              <div className="map-focus-row"><label>Line</label><span>{data.line}</span></div>
+              <div className="map-focus-summary">
+                <div>
+                  <span className="map-focus-eyebrow">Defect category</span>
+                  <h3>{data.type}</h3>
+                </div>
+                <div className={`map-focus-severity ${data.sev}`}>
+                  <span>Severity: {fmtSev(data.sev)}</span>
+                  {data.severityNum != null && <strong>{data.severityNum}/10</strong>}
+                </div>
+              </div>
+              <div className="map-focus-row"><label>Track ID</label><span>{data.line}</span></div>
               {data.severityNum != null && (
                 <div className="map-focus-row"><label>Severity score</label><span>{data.severityNum} / 10</span></div>
               )}

@@ -1484,26 +1484,101 @@
     text-align: center;
   }
   .map-focus-meta {
-    padding: 18px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.018), transparent 120px),
+      var(--bg-1);
+  }
+  .map-focus-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding-bottom: 16px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .map-focus-eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .map-focus-severity {
+    min-width: 150px;
+    min-height: 58px;
+    border-radius: var(--radius-lg);
+    padding: 9px 12px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font-family: var(--mono);
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .map-focus-severity span {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .map-focus-severity strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--text-0);
+  }
+  .map-focus-severity.crit,
+  .map-focus-severity.high {
+    color: var(--crit);
+    border-color: rgba(255,61,84,0.34);
+    background: rgba(255,61,84,0.08);
+  }
+  .map-focus-severity.med {
+    color: var(--high);
+    border-color: rgba(255,122,69,0.32);
+    background: rgba(255,122,69,0.08);
+  }
+  .map-focus-severity.low {
+    color: var(--warn);
+    border-color: rgba(255,181,71,0.32);
+    background: rgba(255,181,71,0.08);
   }
   .map-focus-meta h3 {
-    font-size: 22px;
+    font-size: 38px;
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
   .map-focus-row {
     display: grid;
-    grid-template-columns: 90px 1fr;
-    gap: 8px;
-    padding-top: 8px;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 16px;
+    padding: 13px 0;
     border-top: 1px solid var(--line-soft);
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 16px;
   }
-  .map-focus-row label { color: var(--text-2); }
+  .map-focus-row label {
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 13px;
+  }
+  .map-focus-row span {
+    min-width: 0;
+    color: var(--text-0);
+    font-weight: 600;
+    word-break: break-word;
+  }
   .map-focus-video {
     aspect-ratio: 16 / 9;
     background: #050709;
