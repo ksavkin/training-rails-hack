@@ -11,7 +11,7 @@ import { Icon } from './Icons.jsx';
  * Resolved pin (status='resolved'):
  *   - Reopen — sends pin back to its prior active status
  *
- * Reused by DefectDetail (full page) and MapFocusPopup (overlay).
+ * Used by MapFocusPopup as the single source of pin actions.
  *
  * `pendingAction`: name of the in-flight mutation ('acknowledge' | 'resolve'
  * | 'reopen' | null). The matching button shows an inline spinner; all

@@ -111,7 +111,7 @@ export default function MapFocusPopup({
               {data.notes && (
                 <div className="map-focus-row"><label>Notes</label><span>{data.notes}</span></div>
               )}
-              {onAcknowledge && onResolve && onOpenDispatch && (
+              {(onAcknowledge || onResolve || onOpenDispatch || onReopen) && (
                 <div className="map-focus-actions">
                   <DefectActions
                     pin={livePin ?? data}

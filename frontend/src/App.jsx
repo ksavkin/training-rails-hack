@@ -4,7 +4,6 @@ import { IconSprite } from './components/Icons.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import Topbar from './components/Topbar.jsx';
 import Dashboard from './components/Dashboard.jsx';
-import DefectDetail from './components/DefectDetail.jsx';
 import TrackView from './components/TrackView.jsx';
 import VideoPopup from './components/VideoPopup.jsx';
 import DispatchModal from './components/DispatchModal.jsx';
@@ -72,10 +71,8 @@ export default function App() {
     error: pinsError
   } = useRailPins({ onCriticalSeverity: onCriticalSeverityPin });
 
-  // Inspect button (sidebar / topbar / critical alert) used to navigate to
-  // the full-page DefectDetail. We've consolidated to MapFocusPopup as the
-  // single overlay-style detail view, so all "Inspect" entry points now
-  // trigger the same modal.
+  // All "Inspect" entry points (sidebar / topbar / critical alert) open the
+  // same MapFocusPopup overlay — there is no longer a separate detail page.
   const openMapDefect = useCallback((pin) => {
     if (pin?.id) {
       setSelectedPin(pin);
@@ -185,13 +182,12 @@ export default function App() {
         }
         return prev;
       });
-      if (page === 'defect') goPage('dashboard');
       return;
     }
     if (updated === selectedPin) return;
     setSelectedPin(updated);
     setResolved(updated.sev === 'resolved');
-  }, [pins, selectedPin, page, goPage]);
+  }, [pins, selectedPin]);
 
   // Global keyboard
   useEffect(() => {
@@ -233,18 +229,6 @@ export default function App() {
             onOpenVideo={openVideo}
             onOpenMapDefect={openMapDefect}
             onOpenMapCamera={openMapCamera}
-          />
-          <DefectDetail
-            active={page === 'defect'}
-            pins={pins}
-            selectedPin={selectedPin}
-            onBack={() => goPage('dashboard')}
-            onOpenDispatch={openDispatch}
-            onAcknowledge={handleAcknowledge}
-            onResolve={handleResolve}
-            onReopen={handleReopen}
-            resolved={resolved}
-            pendingAction={pendingAction}
           />
           <TrackView
             active={page === 'track'}

@@ -564,7 +564,7 @@ const RailPinMap = forwardRef(function RailPinMap(
       const m = L.marker([FOCUS_PIN.lat, FOCUS_PIN.lon], {
         icon: makeDefectPinIcon(FOCUS_PIN, { isNewDrop: true })
       }).addTo(map);
-      m.bindPopup(buildPopup(FOCUS_PIN, (pin) => onOpenDefectRef.current?.(pin)), { closeButton: false, offset: [0, -18] });
+      m.bindPopup(buildPopup(FOCUS_PIN, (pin) => onOpenDefectRef.current?.(pin)), popupOptions(FOCUS_PIN));
       attachHoverHandlers(m, hoverPreviewRef);
       demoMarkerRef.current = m;
       map.setView([FOCUS_PIN.lat, FOCUS_PIN.lon], 11, { animate: true });
