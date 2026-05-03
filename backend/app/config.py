@@ -24,8 +24,27 @@ def get_supabase_url() -> str | None:
     return os.getenv("SUPABASE_URL")
 
 
-def get_supabase_key() -> str | None:
-    return os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_PUBLISHABLE_KEY")
+def require_service_role_key() -> str:
+    """All backend operations against Supabase need service_role:
+    - Storage download bypasses bucket privacy
+    - Pin PATCH/GET happens after `REVOKE UPDATE FROM anon` (migration 0002),
+      so anon/publishable can't write
+    Fail loudly with a clear message instead of returning the publishable key
+    and watching writes 401 at runtime.
+    """
+    from fastapi import HTTPException
+    key = os.getenv("SUPABASE_SECRET_KEY")
+    if not key:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "SUPABASE_SECRET_KEY (service_role) is not configured. "
+                "The publishable/anon key cannot perform backend mutations after "
+                "migration 0002 revokes UPDATE on pins from anon. "
+                "Set SUPABASE_SECRET_KEY in backend/.env."
+            ),
+        )
+    return key
 
 
 def get_supabase_storage_bucket() -> str | None:

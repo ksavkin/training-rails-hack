@@ -4,7 +4,7 @@ from urllib import error, parse, request
 
 from fastapi import HTTPException
 
-from app.config import get_supabase_key, get_supabase_storage_bucket, get_supabase_url
+from app.config import get_supabase_storage_bucket, get_supabase_url, require_service_role_key
 
 
 @dataclass
@@ -17,18 +17,13 @@ class StorageImage:
 
 def download_storage_image(image_path: str, bucket: str | None = None) -> StorageImage:
     supabase_url = get_supabase_url()
-    supabase_key = get_supabase_key()
     storage_bucket = bucket or get_supabase_storage_bucket()
 
     if not supabase_url:
         raise HTTPException(status_code=500, detail="SUPABASE_URL is not configured")
-    if not supabase_key:
-        raise HTTPException(
-            status_code=500,
-            detail="SUPABASE_SECRET_KEY or SUPABASE_PUBLISHABLE_KEY is not configured",
-        )
     if not storage_bucket:
         raise HTTPException(status_code=500, detail="SUPABASE_STORAGE_BUCKET is not configured")
+    supabase_key = require_service_role_key()
 
     object_url = build_storage_object_url(supabase_url, storage_bucket, image_path)
     storage_request = request.Request(
