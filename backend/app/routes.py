@@ -16,11 +16,6 @@ async def health():
     return {"status": "ok"}
 
 
-@router.get("/detect")
-async def get_detect():
-    return detection_response(9.0)
-
-
 @router.post("/detect")
 async def detect(defect: dict | None = None):
     if defect is None:

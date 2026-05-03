@@ -1,11 +1,10 @@
-from pathlib import Path
 from uuid import uuid4
 
 from fastapi import HTTPException
 
-from app.config import BACKEND_DIR, REPO_DIR
 from app.gemini_client import request_severity
 from app.severity import parse_severity
+from app.supabase_client import download_storage_image
 
 
 def detect_defect(defect: dict) -> dict:
@@ -13,29 +12,19 @@ def detect_defect(defect: dict) -> dict:
     if not image_path:
         raise HTTPException(status_code=400, detail="Missing required field: image_path")
 
-    resolved_path = resolve_image_path(image_path)
-    gemini_text = request_severity(resolved_path)
+    image_bucket = defect.get("image_bucket")
+    storage_image = download_storage_image(image_path, image_bucket)
+    gemini_text = request_severity(storage_image.data, storage_image.mime_type)
     severity = parse_severity(gemini_text)
 
     response = detection_response(severity)
     response["gemini_raw"] = gemini_text
     response["severity_source"] = "gemini"
+    response["image_source"] = {
+        "bucket": storage_image.bucket,
+        "path": storage_image.path,
+    }
     return response
-
-
-def resolve_image_path(image_path: str) -> Path:
-    path = Path(image_path)
-    candidates = [
-        path,
-        BACKEND_DIR / path,
-        REPO_DIR / path,
-    ]
-
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate
-
-    raise HTTPException(status_code=400, detail=f"Image not found: {image_path}")
 
 
 def detection_response(severity: float) -> dict:

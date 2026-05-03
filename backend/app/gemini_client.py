@@ -1,7 +1,5 @@
 import base64
 import json
-import mimetypes
-from pathlib import Path
 from urllib import error, request
 
 from fastapi import HTTPException
@@ -31,12 +29,12 @@ SEVERITY_PROMPT = (
 )
 
 
-def request_severity(image_path: Path) -> str:
+def request_severity(image_data: bytes, mime_type: str) -> str:
     api_key = get_gemini_api_key()
     if not api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
 
-    payload = build_gemini_payload(image_path)
+    payload = build_gemini_payload(image_data, mime_type)
     gemini_request = request.Request(
         GEMINI_URL.format(model=get_gemini_model()),
         data=json.dumps(payload).encode("utf-8"),
@@ -59,9 +57,8 @@ def request_severity(image_path: Path) -> str:
     return extract_text(response_body)
 
 
-def build_gemini_payload(image_path: Path) -> dict:
-    mime_type = mimetypes.guess_type(image_path.name)[0] or "image/jpeg"
-    image_data = base64.b64encode(image_path.read_bytes()).decode("utf-8")
+def build_gemini_payload(image_bytes: bytes, mime_type: str) -> dict:
+    encoded_image = base64.b64encode(image_bytes).decode("utf-8")
 
     return {
         "contents": [
@@ -70,7 +67,7 @@ def build_gemini_payload(image_path: Path) -> dict:
                     {
                         "inline_data": {
                             "mime_type": mime_type,
-                            "data": image_data,
+                            "data": encoded_image,
                         }
                     },
                     {"text": SEVERITY_PROMPT},
