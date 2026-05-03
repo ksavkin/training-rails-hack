@@ -211,16 +211,21 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url,
 
     # Step 2: FastAPI /detect -- send relative storage path, get back severity
     try:
+        api_token = os.getenv("FASTAPI_TOKEN", "")
+        detect_headers = {}
+        if api_token:
+            detect_headers["Authorization"] = "Bearer {}".format(api_token)
         resp = requests.post(
             "{}/detect".format(fastapi_url),
             json={"image_path": image_path},
+            headers=detect_headers,
             timeout=10,
         )
         if resp.status_code not in (200, 201):
             print("[detect] /detect returned {}: {}".format(
                 resp.status_code, resp.text[:120]))
             return
-        severity = int(resp.json().get("severity"))
+        severity = float(resp.json().get("severity"))
     except Exception as exc:
         print("[detect] POST failed: {}".format(exc))
         return
