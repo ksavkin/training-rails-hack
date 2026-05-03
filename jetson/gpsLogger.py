@@ -21,8 +21,12 @@ class GPSLogger:
         try:
             self.session = gps.gps(mode=gps.WATCH_ENABLE)
         except Exception as e:
-            print(f"Error connecting to gpsd: {e}")
-            exit(1)
+            raise RuntimeError("Error connecting to gpsd: {}".format(e))
+
+    @property
+    def current(self):
+        """Uniform interface shared with MockGPS."""
+        return self.current_data
 
     def update_gps(self):
         """Background thread to poll GPS device."""
