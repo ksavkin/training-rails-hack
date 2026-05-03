@@ -1,5 +1,11 @@
 import { useState } from 'react';
 import { Icon } from './Icons.jsx';
+import { CAMERAS } from '../data/railData.js';
+
+const TRACK_CAMERA_ICONS = [
+  { cam: CAMERAS[0], classSuffix: '422', shortLabel: 'T-422', durationSec: 30, delaySec: 0 },
+  { cam: CAMERAS[1], classSuffix: '388', shortLabel: 'T-388', durationSec: 90, delaySec: -42 }
+];
 
 const TICKS = [
   { left: 0, label: 'MP 0 · Corvallis', major: true, end: true },
@@ -52,7 +58,7 @@ const FILTER_CHIPS = [
   { sev: '', label: 'resolved (7)', active: false }
 ];
 
-export default function TrackView({ active, onOpenDetail }) {
+export default function TrackView({ active, onOpenDetail, onOpenCamera }) {
   const [chips, setChips] = useState(FILTER_CHIPS.map((c) => c.active));
 
   return (
@@ -92,6 +98,27 @@ export default function TrackView({ active, onOpenDetail }) {
 
         <div className="track-strip">
           <div className="track-line" />
+          {TRACK_CAMERA_ICONS.map(({ cam, classSuffix, shortLabel, durationSec, delaySec }) => (
+            <button
+              key={cam.id}
+              type="button"
+              className={`track-cam track-cam--${classSuffix}`}
+              style={{
+                animationDuration: `${durationSec}s`,
+                animationDelay: `${delaySec}s`
+              }}
+              onClick={() => onOpenCamera?.(cam)}
+              aria-label={`${cam.label} · position along route`}
+            >
+              <span className="track-cam-label">{shortLabel}</span>
+              <span className="track-cam-disc">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 8a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1l3-2v10l-3-2v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="currentColor" />
+                  <circle cx="9" cy="12" r="2.1" fill="var(--bg-0)" />
+                </svg>
+              </span>
+            </button>
+          ))}
           {TICKS.map((t, i) => (
             <span key={i}>
               <div

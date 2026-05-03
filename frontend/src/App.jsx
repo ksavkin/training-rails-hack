@@ -114,6 +114,7 @@ export default function App() {
           <TrackView
             active={page === 'track'}
             onOpenDetail={openDetail}
+            onOpenCamera={openMapCamera}
           />
           <LiveFeed
             active={page === 'feed'}

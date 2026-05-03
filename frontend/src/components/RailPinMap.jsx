@@ -168,23 +168,30 @@ function makeCameraIcon(label, cls) {
   });
 }
 
-function animateTrainAlongRoute(marker, coords, durationMs, stopRef) {
+/** Bounding box of every route vertex — used so the map is zoomed in enough to see train motion. */
+function boundsFromAllRoutes() {
+  const pts = Object.values(ROUTES).flatMap((r) => r.coords);
+  return L.latLngBounds(pts);
+}
+
+function animateTrainAlongRoute(map, marker, coords, durationMs, stopRef) {
   const t0 = performance.now();
   function step(now) {
     if (stopRef.current) return;
-    try {
-      const elapsed = now - t0;
-      const progress = (elapsed % durationMs) / durationMs;
-      const idx = progress * (coords.length - 1);
-      const i0 = Math.floor(idx);
-      const i1 = Math.min(i0 + 1, coords.length - 1);
-      const f = idx - i0;
-      const lat = coords[i0][0] + (coords[i1][0] - coords[i0][0]) * f;
-      const lon = coords[i0][1] + (coords[i1][1] - coords[i0][1]) * f;
-      marker.setLatLng([lat, lon]);
-    } catch {
-      return;
-    }
+    const root = map?.getContainer?.();
+    if (!root || !map.hasLayer(marker)) return;
+
+    const t = typeof now === 'number' ? now : performance.now();
+    const elapsed = t - t0;
+    const progress = (elapsed % durationMs) / durationMs;
+    const idx = progress * (coords.length - 1);
+    const i0 = Math.floor(idx);
+    const i1 = Math.min(i0 + 1, coords.length - 1);
+    const f = idx - i0;
+    const lat = coords[i0][0] + (coords[i1][0] - coords[i0][0]) * f;
+    const lon = coords[i0][1] + (coords[i1][1] - coords[i0][1]) * f;
+    marker.setLatLng([lat, lon]);
+
     requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -217,24 +224,46 @@ const RailPinMap = forwardRef(function RailPinMap(
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: true
-    }).setView([44.95, -122.7], 7);
+    });
     mapRef.current = map;
+
+    // Zoom ~7 showed the whole corridor as a few pixels; trains moved but were visually static.
+    map.fitBounds(boundsFromAllRoutes(), { padding: [44, 44], maxZoom: 10 });
 
     setupTilesWithFallback(map, badgeRef.current);
     routeBundlesRef.current = addRoutes(map);
     addCities(map);
     pinStateRef.current = addPins(map, [], (pin) => onOpenDefectRef.current?.(pin));
 
-    const train422 = L.marker(ROUTES['1'].coords[0], { icon: makeCameraIcon('T-422', '') }).addTo(map);
-    const train388 = L.marker(ROUTES['3'].coords[1], { icon: makeCameraIcon('T-388', 't-388') }).addTo(map);
+    const train422 = L.marker(ROUTES['1'].coords[0], { icon: makeCameraIcon('T-422', ''), zIndexOffset: 800 }).addTo(map);
+    const train388 = L.marker(ROUTES['3'].coords[1], { icon: makeCameraIcon('T-388', 't-388'), zIndexOffset: 800 }).addTo(map);
     train422.on('click', () => onOpenCameraRef.current?.(CAMERAS[0]));
     train388.on('click', () => onOpenCameraRef.current?.(CAMERAS[1]));
     train422Ref.current = train422;
 
     const stopRef = { current: false };
     stopAnimRef.current = stopRef;
-    animateTrainAlongRoute(train422, ROUTES['1'].coords, 30000, stopRef);
-    animateTrainAlongRoute(train388, ROUTES['3'].coords, 90000, stopRef);
+
+    const startTrainAnimations = () => {
+      map.invalidateSize();
+      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, 30000, stopRef);
+      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 90000, stopRef);
+    };
+
+    map.whenReady(() => {
+      map.invalidateSize();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(startTrainAnimations);
+      });
+    });
+
+    let resizeObs = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObs = new ResizeObserver(() => {
+        map.invalidateSize();
+      });
+      resizeObs.observe(containerRef.current);
+    }
 
     const heatCfg = {
       radius: 2,
@@ -251,11 +280,11 @@ const RailPinMap = forwardRef(function RailPinMap(
     heatLayer.setData(buildHeatmapPayload(filterPinsByLine([], lineFilterRef.current)));
     heatmapLayerRef.current = heatLayer;
 
-    // Force a resize tick after layout settles — fixes blank map / no tiles on first paint
     setTimeout(() => map.invalidateSize(), 0);
 
     return () => {
       stopRef.current = true;
+      resizeObs?.disconnect();
       heatmapLayerRef.current = null;
       map.remove();
       mapRef.current = null;
