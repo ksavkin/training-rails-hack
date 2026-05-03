@@ -225,6 +225,46 @@
   .page-title { font-family: var(--sans); font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
   .page-sub { color: var(--text-2); font-size: 13px; margin-top: 4px; }
   .page-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .toggle-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-1);
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 120ms, color 120ms;
+  }
+  .toggle-pill:hover { border-color: var(--line); }
+  .toggle-pill input[type="checkbox"] {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    margin: 0;
+  }
+  .toggle-pill input[type="checkbox"]:checked {
+    background: var(--accent, #8effa1);
+    border-color: var(--accent, #8effa1);
+  }
+  .toggle-pill input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 0;
+    width: 4px;
+    height: 8px;
+    border-right: 2px solid #0a0d10;
+    border-bottom: 2px solid #0a0d10;
+    transform: rotate(45deg);
+  }
 
   .btn {
     height: 32px; padding: 0 12px; border-radius: var(--radius);
@@ -522,6 +562,10 @@
   .sev-badge.med { background: rgba(255,181,71,0.1); color: var(--warn); border: 1px solid rgba(255,181,71,0.2); }
   .sev-badge.low { background: rgba(90,176,255,0.1); color: var(--info); border: 1px solid rgba(90,176,255,0.2); }
   .sev-badge.ok { background: rgba(74,222,128,0.1); color: var(--ok); border: 1px solid rgba(74,222,128,0.2); }
+  /* Resolved pins use the same green palette as `.ok`. The pin-mapper emits
+     `sev='resolved'` (not 'ok') so we duplicate the rule under that name —
+     otherwise the header reads as plain white text with no tint. */
+  .sev-badge.resolved { background: rgba(74,222,128,0.1); color: var(--ok); border: 1px solid rgba(74,222,128,0.2); }
 
   /* Status pills */
   .status-pill {
@@ -1041,7 +1085,9 @@
     background: rgba(5,7,9,0.7);
     backdrop-filter: blur(4px);
     display: none;
-    z-index: 280;
+    /* Above MapFocusPopup (z-index: 320) — Dispatch is opened FROM the
+       focus modal so it must visually stack on top. */
+    z-index: 340;
     align-items: center; justify-content: center;
   }
   .dispatch-modal-backdrop.show { display: flex; animation: fadeIn 0.2s; }
@@ -1070,10 +1116,13 @@
   }
   .spinner {
     width: 14px; height: 14px;
-    border: 2px solid var(--bg-3);
-    border-top-color: var(--accent);
+    border: 2px solid currentColor;
+    border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    opacity: 0.85;
+    flex-shrink: 0;
+    display: inline-block;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -1108,6 +1157,22 @@
     margin-bottom: 6px; font-weight: 600;
   }
   .sms-text { color: var(--text-0); font-size: 13px; line-height: 1.5; }
+  /* Error variant — used when SMS / dispatch fails. Red palette + readable
+     non-uppercase body so the backend's `detail` text reads naturally. */
+  .sms-preview.error {
+    background: rgba(255, 61, 84, 0.08);
+    border-color: rgba(255, 61, 84, 0.35);
+    color: var(--crit);
+  }
+  .sms-preview.error .sms-preview-head {
+    color: var(--crit);
+  }
+  .sms-preview.error .sms-text {
+    color: var(--text-0);
+    font-family: var(--sans);
+    text-transform: none;
+    letter-spacing: 0;
+  }
 
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -1322,35 +1387,95 @@
     margin: 12px 14px !important;
     font-family: var(--sans);
   }
-  .pin-popup-id {
-    font-family: var(--mono); font-size: 10px;
-    color: var(--text-3); margin-bottom: 4px;
+  /* Header: severity tag + human-readable defect type, framed in the
+     severity color. Pin id + MP becomes a small caption below.
+     Both items sit on a shared baseline; sev is intentionally a hair
+     smaller than the type to read as a label/tag for the noun. */
+  .pin-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    overflow: hidden;
   }
-  .pin-popup-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .pin-popup-header-sev {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+  }
+  .pin-popup-header-type {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .pin-popup-subtitle {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-3);
+    margin: 0;
+  }
+  /* Compact horizontal layout — photo left, info right. Total height stays
+     under the popup tip + tip arrow space so Leaflet does not auto-pan. */
+  .pin-popup-grid {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    cursor: pointer;
+  }
   .pin-popup-preview {
-    margin: -4px 0 10px;
+    width: 160px;
+    height: 160px;
+    margin: 0;
     border-radius: var(--radius);
     overflow: hidden;
-    border: 1px solid var(--line);
-    max-width: 220px;
+    border: 2px solid var(--line);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: opacity 120ms;
+  }
+  .pin-popup-preview:hover { opacity: 0.85; }
+  .pin-popup-preview-empty {
+    background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
   }
   .pin-popup-preview img {
     display: block;
     width: 100%;
-    height: auto;
-    vertical-align: middle;
+    height: 100%;
+    object-fit: cover;
   }
-  .pin-popup-stats {
-    margin-top: 8px;
+  .pin-popup-info {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    max-height: 220px;
-    overflow-y: auto;
+    gap: 4px;
+    min-width: 0;
+  }
+  .pin-popup-stats {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
   .pin-popup-stat {
     display: grid;
-    grid-template-columns: 84px 1fr;
+    grid-template-columns: 72px 1fr;
     gap: 8px;
     align-items: baseline;
     font-size: 11px;
@@ -1382,6 +1507,21 @@
   }
   .pin-popup-link:hover { text-decoration: underline; }
 
+  /* Severity-aware visual cue: a colored left bar on the popup wrapper +
+     matching photo outline. The bar gives an at-a-glance read of urgency
+     without overpowering the photo or text. */
+  .pin-popup.pin-popup-crit .leaflet-popup-content-wrapper { border-left: 4px solid var(--crit) !important; }
+  .pin-popup.pin-popup-high .leaflet-popup-content-wrapper { border-left: 4px solid var(--high) !important; }
+  .pin-popup.pin-popup-med  .leaflet-popup-content-wrapper { border-left: 4px solid var(--warn) !important; }
+  .pin-popup.pin-popup-low  .leaflet-popup-content-wrapper { border-left: 4px solid var(--info) !important; }
+  .pin-popup.pin-popup-resolved .leaflet-popup-content-wrapper { border-left: 4px solid var(--ok) !important; opacity: 0.92; }
+
+  .pin-popup.pin-popup-crit .pin-popup-preview { border-color: var(--crit); }
+  .pin-popup.pin-popup-high .pin-popup-preview { border-color: var(--high); }
+  .pin-popup.pin-popup-med  .pin-popup-preview { border-color: var(--warn); }
+  .pin-popup.pin-popup-low  .pin-popup-preview { border-color: var(--info); }
+  .pin-popup.pin-popup-resolved .pin-popup-preview { border-color: var(--ok); }
+
   /* Tile provider badge */
   .tile-provider-badge {
     position: absolute;
@@ -1408,20 +1548,28 @@
     place-items: center;
   }
   .map-focus-modal {
-    width: min(95vw, 1180px);
+    width: min(92vw, 960px);
+    /* Fixed height (clamped to viewport) so the modal doesn't reflow when
+       the action set toggles between 1 and 3 buttons (Resolve ↔ Reopen).
+       Internal scroll on .map-focus-meta absorbs any overflow on tall
+       metadata. 700px fits the typical pin without scroll on 1080+ heights. */
+    height: min(700px, 88vh);
     background: var(--bg-1);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     box-shadow: 0 32px 80px rgba(0,0,0,0.6);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     animation: pop-in 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
   }
   .map-focus-head {
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--line);
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
   }
   .map-focus-head .title { font-size: 15px; font-weight: 700; }
   .map-focus-head .source-info {
@@ -1430,14 +1578,76 @@
     color: var(--text-2);
   }
   .map-focus-head .spacer { flex: 1; }
+
+  /* Combined header for defect modal: severity tag + human-readable defect
+     type on the main row, technical id+MP+line+conf as a smaller subtitle.
+     Mirrors the small Leaflet popup header. */
+  .map-focus-title-combined {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .map-focus-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .map-focus-title-sev {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .map-focus-title-type {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-0);
+  }
+  .map-focus-title-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-2);
+  }
+
+  /* Severity-tinted modal: left bar + tinted header background + colored
+     photo border. Same logic as the hover popup, scaled up for the modal. */
+  .map-focus-modal.pin-popup-crit { border-left: 6px solid var(--crit); }
+  .map-focus-modal.pin-popup-high { border-left: 6px solid var(--high); }
+  .map-focus-modal.pin-popup-med  { border-left: 6px solid var(--warn); }
+  .map-focus-modal.pin-popup-low  { border-left: 6px solid var(--info); }
+  .map-focus-modal.pin-popup-resolved { border-left: 6px solid var(--ok); }
+
+  .map-focus-modal.pin-popup-crit .map-focus-head.with-sev { background: rgba(255,61,84,0.10); border-bottom-color: rgba(255,61,84,0.30); }
+  .map-focus-modal.pin-popup-high .map-focus-head.with-sev { background: rgba(255,122,69,0.10); border-bottom-color: rgba(255,122,69,0.25); }
+  .map-focus-modal.pin-popup-med  .map-focus-head.with-sev { background: rgba(255,181,71,0.10); border-bottom-color: rgba(255,181,71,0.20); }
+  .map-focus-modal.pin-popup-low  .map-focus-head.with-sev { background: rgba(90,176,255,0.10); border-bottom-color: rgba(90,176,255,0.25); }
+  .map-focus-modal.pin-popup-resolved .map-focus-head.with-sev { background: rgba(74,222,128,0.10); border-bottom-color: rgba(74,222,128,0.25); }
+
+  .map-focus-modal.pin-popup-crit .map-focus-title-sev { color: var(--crit); }
+  .map-focus-modal.pin-popup-high .map-focus-title-sev { color: var(--high); }
+  .map-focus-modal.pin-popup-med  .map-focus-title-sev { color: var(--warn); }
+  .map-focus-modal.pin-popup-low  .map-focus-title-sev { color: var(--info); }
+  .map-focus-modal.pin-popup-resolved .map-focus-title-sev { color: var(--ok); }
+
+  .map-focus-modal.pin-popup-crit .map-focus-media { border-right-color: var(--crit); }
+  .map-focus-modal.pin-popup-high .map-focus-media { border-right-color: var(--high); }
+  .map-focus-modal.pin-popup-med  .map-focus-media { border-right-color: var(--warn); }
+  .map-focus-modal.pin-popup-low  .map-focus-media { border-right-color: var(--info); }
+  .map-focus-modal.pin-popup-resolved .map-focus-media { border-right-color: var(--ok); }
   .map-focus-defect-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-    min-height: 520px;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
   }
   .map-focus-media {
     background: #0a0d10;
     border-right: 1px solid var(--line);
+    overflow: hidden;
   }
   .map-focus-media img {
     width: 100%;
@@ -1455,15 +1665,17 @@
     text-align: center;
   }
   .map-focus-meta {
-    padding: 18px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    overflow-y: auto;
   }
   .map-focus-meta h3 {
-    font-size: 22px;
+    font-size: 18px;
     line-height: 1.2;
     letter-spacing: -0.02em;
+    margin: 0;
   }
   .map-focus-row {
     display: grid;
@@ -1475,6 +1687,23 @@
     font-size: 12px;
   }
   .map-focus-row label { color: var(--text-2); }
+  .map-focus-actions {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .map-focus-actions .meta-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .map-focus-actions h3 {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
   .map-focus-video {
     aspect-ratio: 16 / 9;
     background: #050709;

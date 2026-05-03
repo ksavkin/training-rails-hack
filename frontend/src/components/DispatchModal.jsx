@@ -45,7 +45,20 @@ export default function DispatchModal({ open, pin, apiUrl, apiToken, onClose }) 
       });
       if (!res.ok) {
         const text = await res.text();
-        setErrorMsg(text || `HTTP ${res.status}`);
+        // Backend returns FastAPI-style JSON like {"detail": "Pin ... is in status ..."}.
+        // Extract the human-readable detail; fall back to the raw payload.
+        let friendly = text;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed && typeof parsed === 'object' && parsed.detail) {
+            friendly = typeof parsed.detail === 'string'
+              ? parsed.detail
+              : JSON.stringify(parsed.detail);
+          }
+        } catch {
+          // not JSON — keep raw
+        }
+        setErrorMsg(friendly || `HTTP ${res.status}`);
         setSmsState('error');
         return;
       }
@@ -101,8 +114,9 @@ export default function DispatchModal({ open, pin, apiUrl, apiToken, onClose }) 
           )}
 
           {smsState === 'error' && errorMsg && (
-            <div className="sms-preview" style={{ borderColor: 'var(--crit)' }}>
-              <div className="sms-preview-head">Failed: {errorMsg}</div>
+            <div className="sms-preview error">
+              <div className="sms-preview-head">Failed</div>
+              <div className="sms-text">{errorMsg}</div>
             </div>
           )}
 

@@ -4,6 +4,7 @@ import L from 'leaflet';
 import HeatmapOverlayFactory from 'heatmap.js/plugins/leaflet-heatmap/leaflet-heatmap.js';
 import { ROUTES, CITIES, FOCUS_PIN, CAMERAS, TILE_PROVIDERS } from '../data/railData.js';
 import { makeDefectPinIcon, isPlaceholderMapImageUrl } from '../lib/leafletPinIcon.js';
+import { formatDefectType } from '../lib/pinMappers.js';
 
 const HeatmapOverlay = HeatmapOverlayFactory?.default ?? HeatmapOverlayFactory;
 
@@ -90,13 +91,18 @@ function statRow(label, value) {
 }
 
 function buildPopup(pin, onOpenDefect) {
+  // Compact horizontal layout: photo on the left, identification + reduced
+  // stats on the right. Reduces total height so the popup fits inside the
+  // map viewport without forcing a Leaflet auto-pan, which was making the
+  // map jiggle when the user hovered a pin near the edge. Full metadata
+  // still lives in MapFocusPopup (opened via the "Open detail →" link).
   const wrap = document.createElement('div');
   const showImg = pin.imageUrl && !isPlaceholderMapImageUrl(pin.imageUrl);
   const preview = showImg
     ? '<div class="pin-popup-preview"><img src="' +
       escapeAttr(pin.imageUrl) +
       '" alt="" loading="lazy" decoding="async" /></div>'
-    : '';
+    : '<div class="pin-popup-preview pin-popup-preview-empty"></div>';
 
   const confStr =
     pin.conf != null && Number.isFinite(Number(pin.conf))
@@ -104,6 +110,11 @@ function buildPopup(pin, onOpenDefect) {
       : pin.conf != null
         ? String(pin.conf)
         : '';
+
+  const coords =
+    Number.isFinite(pin.lat) && Number.isFinite(pin.lon)
+      ? pin.lat.toFixed(4) + '°, ' + pin.lon.toFixed(4) + '°'
+      : '';
 
   const stats =
     statRow('Line', pin.line) +
@@ -113,46 +124,48 @@ function buildPopup(pin, onOpenDefect) {
         ? String(pin.sev).toUpperCase() + ' · ' + pin.severityNum + '/10'
         : String(pin.sev).toUpperCase()
     ) +
-    statRow('Milepost', pin.mp) +
     statRow('Confidence', confStr) +
     statRow('Captured', pin.capturedAt) +
-    statRow('Latitude', Number.isFinite(pin.lat) ? pin.lat.toFixed(6) + '°' : '') +
-    statRow('Longitude', Number.isFinite(pin.lon) ? pin.lon.toFixed(6) + '°' : '') +
-    statRow('Status', pin.status) +
-    statRow('Device', pin.deviceId) +
-    statRow('Frame ID', pin.frameId != null ? String(pin.frameId) : '') +
-    statRow('Resolved at', pin.resolvedAt) +
-    statRow('Created', pin.createdAt) +
-    statRow('Updated', pin.updatedAt) +
-    statRow('Storage path', pin.imagePath) +
-    statRow('Notes', pin.notes);
+    statRow('Coords', coords) +
+    statRow('Status', pin.status);
 
+  // Header carries the operator-relevant pair: severity tag + human-readable
+  // defect type. The technical id+MP becomes a smaller caption below.
+  const typeLabel = formatDefectType(pin.type);
   wrap.innerHTML =
+    '<div class="pin-popup-grid">' +
     preview +
-    '<div class="pin-popup-id">' +
+    '<div class="pin-popup-info">' +
+    '<div class="pin-popup-header sev-badge ' +
+    escapeHtml(pin.sev) +
+    '">' +
+    '<span class="pin-popup-header-sev">' +
+    escapeHtml(String(pin.sev).toUpperCase()) +
+    '</span>' +
+    '<span class="pin-popup-header-type">' +
+    escapeHtml(typeLabel) +
+    '</span>' +
+    '</div>' +
+    '<div class="pin-popup-subtitle">' +
     escapeHtml(pin.id) +
     ' · MP ' +
     escapeHtml(pin.mp) +
     '</div>' +
-    '<span class="sev-badge ' +
-    escapeHtml(pin.sev) +
-    '">' +
-    escapeHtml(String(pin.sev).toUpperCase()) +
-    '</span>' +
-    '<div class="pin-popup-title" style="margin-top:6px;">' +
-    escapeHtml(pin.type) +
-    '</div>' +
     '<div class="pin-popup-stats">' +
     stats +
     '</div>' +
-    '<a class="pin-popup-link" href="#">Open detail →</a>';
-  const link = wrap.querySelector('.pin-popup-link');
-  if (link) {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      onOpenDefect?.(pin);
-    });
-  }
+    '<a class="pin-popup-link" href="#">Open detail →</a>' +
+    '</div>' +
+    '</div>';
+  // Whole popup (photo + info column + the explicit link) opens the full
+  // MapFocusPopup. The link is kept as an explicit affordance, but a click
+  // anywhere on the body works too — that matches what users expect when
+  // the entire popup is the "card" for one defect.
+  const openHandler = (e) => {
+    e.preventDefault();
+    onOpenDefect?.(pin);
+  };
+  wrap.querySelector('.pin-popup-grid')?.addEventListener('click', openHandler);
   return wrap;
 }
 
@@ -191,27 +204,96 @@ function addRoutes(map) {
   return bundles;
 }
 
-function addPins(map, pinList, onOpenDefect) {
+// Hover mode (default): open the popup on marker hover, keep it while the
+// cursor is on the popup, close after a short grace period when the cursor
+// leaves both. Click mode: skip hover handlers entirely — Leaflet's default
+// click-toggle from bindPopup is sufficient. The mode is read live from
+// `hoverPreviewRef` so toggling the dashboard checkbox doesn't require
+// rebuilding markers.
+const HOVER_CLOSE_GRACE_MS = 200;
+
+function attachHoverHandlers(marker, hoverPreviewRef) {
+  const clearTimer = () => {
+    if (marker._closeTimer) {
+      clearTimeout(marker._closeTimer);
+      marker._closeTimer = null;
+    }
+  };
+  const scheduleClose = () => {
+    if (!hoverPreviewRef.current) return;
+    clearTimer();
+    marker._closeTimer = setTimeout(() => {
+      marker.closePopup();
+      marker._closeTimer = null;
+    }, HOVER_CLOSE_GRACE_MS);
+  };
+
+  marker.on('mouseover', () => {
+    if (!hoverPreviewRef.current) return;
+    clearTimer();
+    marker.openPopup();
+  });
+  marker.on('mouseout', scheduleClose);
+
+  // Click on the marker pans the map smoothly to the pin. Leaflet's default
+  // bindPopup click-to-toggle still runs (handles the click-mode preview).
+  marker.on('click', () => {
+    const map = marker._map;
+    if (!map) return;
+    map.panTo(marker.getLatLng(), { animate: true, duration: 0.5, easeLinearity: 0.5 });
+  });
+
+  marker.on('popupopen', (e) => {
+    const el = e.popup.getElement();
+    if (!el) return;
+    el.addEventListener('mouseenter', clearTimer);
+    el.addEventListener('mouseleave', scheduleClose);
+    marker.once('popupclose', () => {
+      clearTimer();
+      el.removeEventListener('mouseenter', clearTimer);
+      el.removeEventListener('mouseleave', scheduleClose);
+    });
+  });
+}
+
+function removeMarker(map, marker) {
+  if (marker._closeTimer) {
+    clearTimeout(marker._closeTimer);
+    marker._closeTimer = null;
+  }
+  map.removeLayer(marker);
+}
+
+function popupOptions(pin) {
+  return {
+    closeButton: false,
+    offset: [0, -18],
+    maxWidth: 440,
+    minWidth: 380,
+    autoPan: false,
+    className: `pin-popup pin-popup-${pin.sev || 'low'}`,
+  };
+}
+
+function addPins(map, pinList, onOpenDefect, hoverPreviewRef) {
   const markers = [];
   const dataMap = new Map();
   pinList.forEach((pin) => {
     const marker = L.marker([pin.lat, pin.lon], { icon: makeDefectPinIcon(pin, false) }).addTo(map);
-    marker.on('click', () => onOpenDefect?.(pin));
-    marker.bindPopup(buildPopup(pin, onOpenDefect), { closeButton: false, offset: [0, -18] });
+    marker.bindPopup(buildPopup(pin, onOpenDefect), popupOptions(pin));
+    attachHoverHandlers(marker, hoverPreviewRef);
     markers.push(marker);
     dataMap.set(marker, pin);
   });
   return { markers, dataMap };
 }
 
-function replacePinMarkers(map, pinStateRef, pinList, onOpenDefect) {
+function replacePinMarkers(map, pinStateRef, pinList, onOpenDefect, hoverPreviewRef) {
   const prev = pinStateRef.current;
   if (prev?.markers?.length) {
-    prev.markers.forEach((m) => {
-      map.removeLayer(m);
-    });
+    prev.markers.forEach((m) => removeMarker(map, m));
   }
-  pinStateRef.current = addPins(map, pinList, onOpenDefect);
+  pinStateRef.current = addPins(map, pinList, onOpenDefect, hoverPreviewRef);
 }
 
 function makeCameraIcon(label, cls) {
@@ -233,6 +315,39 @@ function makeCameraIcon(label, cls) {
 function boundsFromAllRoutes() {
   const pts = Object.values(ROUTES).flatMap((r) => r.coords);
   return L.latLngBounds(pts);
+}
+
+// Speed model for the demo train markers. Configurable via env so the
+// demo can crank to e.g. 600 km/h for a more visually dynamic playback
+// without code changes. Default 150 km/h is realistic for freight rail.
+//   VITE_TRAIN_SPEED_KMH=150   (default)
+//   VITE_TRAIN_SPEED_KMH=600   (zoomy demo mode)
+const TRAIN_SPEED_KMH = (() => {
+  const raw = Number(import.meta.env.VITE_TRAIN_SPEED_KMH);
+  return Number.isFinite(raw) && raw > 0 ? raw : 150;
+})();
+
+function haversineKm(a, b) {
+  const R = 6371;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(b[0] - a[0]);
+  const dLon = toRad(b[1] - a[1]);
+  const lat1 = toRad(a[0]);
+  const lat2 = toRad(b[0]);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function routeLengthKm(coords) {
+  let total = 0;
+  for (let i = 1; i < coords.length; i++) total += haversineKm(coords[i - 1], coords[i]);
+  return total;
+}
+
+function durationMsFor(coords, speedKmh = TRAIN_SPEED_KMH) {
+  const km = routeLengthKm(coords);
+  if (km <= 0 || speedKmh <= 0) return 60000;
+  return Math.round((km / speedKmh) * 3600 * 1000);
 }
 
 function animateTrainAlongRoute(map, marker, coords, durationMs, stopRef) {
@@ -259,7 +374,7 @@ function animateTrainAlongRoute(map, marker, coords, durationMs, stopRef) {
 }
 
 const RailPinMap = forwardRef(function RailPinMap(
-  { pins = [], pageActive, lineFilter, heatmapEnabled = false, onOpenDefect, onOpenCamera },
+  { pins = [], pageActive, lineFilter, heatmapEnabled = false, hoverPreview = true, onOpenDefect, onOpenCamera },
   ref
 ) {
   const containerRef = useRef(null);
@@ -274,7 +389,9 @@ const RailPinMap = forwardRef(function RailPinMap(
   const onOpenDefectRef = useRef(onOpenDefect);
   const onOpenCameraRef = useRef(onOpenCamera);
   const lineFilterRef = useRef(lineFilter);
+  const hoverPreviewRef = useRef(hoverPreview);
   lineFilterRef.current = lineFilter;
+  hoverPreviewRef.current = hoverPreview;
 
   // Keep callback ref in sync without re-running init effect
   useEffect(() => { onOpenDefectRef.current = onOpenDefect; }, [onOpenDefect]);
@@ -294,7 +411,7 @@ const RailPinMap = forwardRef(function RailPinMap(
     setupTilesWithFallback(map, badgeRef.current);
     routeBundlesRef.current = addRoutes(map);
     addCities(map);
-    pinStateRef.current = addPins(map, [], (pin) => onOpenDefectRef.current?.(pin));
+    pinStateRef.current = addPins(map, [], (pin) => onOpenDefectRef.current?.(pin), hoverPreviewRef);
 
     // --- Heatmap (overlay instance + ref only). Toggle lives in a separate useEffect; pins effect updates setData. Do not add camera/train logic here. ---
     const heatCfg = {
@@ -325,8 +442,8 @@ const RailPinMap = forwardRef(function RailPinMap(
 
     const startTrainAnimations = () => {
       map.invalidateSize();
-      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, 30000, stopRef);
-      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 100000, stopRef);
+      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, durationMsFor(ROUTES['1'].coords), stopRef);
+      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, durationMsFor(ROUTES['3'].coords), stopRef);
     };
 
     map.whenReady(() => {
@@ -381,7 +498,7 @@ const RailPinMap = forwardRef(function RailPinMap(
     const pinState = pinStateRef.current;
     if (!map || !bundles || !pinState) return;
 
-    replacePinMarkers(map, pinStateRef, pins, (pin) => onOpenDefectRef.current?.(pin));
+    replacePinMarkers(map, pinStateRef, pins, (pin) => onOpenDefectRef.current?.(pin), hoverPreviewRef);
 
     Object.keys(bundles).forEach((id) => {
       const visible = lineFilter === 'all' || lineFilter === id;
@@ -441,14 +558,14 @@ const RailPinMap = forwardRef(function RailPinMap(
       const map = mapRef.current;
       if (!map) return;
       if (demoMarkerRef.current) {
-        map.removeLayer(demoMarkerRef.current);
+        removeMarker(map, demoMarkerRef.current);
         demoMarkerRef.current = null;
       }
       const m = L.marker([FOCUS_PIN.lat, FOCUS_PIN.lon], {
         icon: makeDefectPinIcon(FOCUS_PIN, { isNewDrop: true })
       }).addTo(map);
-      m.on('click', () => onOpenDefectRef.current?.(FOCUS_PIN));
       m.bindPopup(buildPopup(FOCUS_PIN, (pin) => onOpenDefectRef.current?.(pin)), { closeButton: false, offset: [0, -18] });
+      attachHoverHandlers(m, hoverPreviewRef);
       demoMarkerRef.current = m;
       map.setView([FOCUS_PIN.lat, FOCUS_PIN.lon], 11, { animate: true });
     }

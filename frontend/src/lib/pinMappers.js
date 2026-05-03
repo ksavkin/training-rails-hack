@@ -1,5 +1,28 @@
 import { resolveDefectImageUrl } from './defectImageUrl.js';
 
+const DEFECT_TYPE_LABELS = {
+  spalling: 'Spalling',
+  transverse_crack: 'Transverse crack',
+  longitudinal_crack: 'Longitudinal crack',
+  joint_defect: 'Joint defect',
+  missing_fastener: 'Missing fastener',
+  loose_fastener: 'Loose fastener',
+  surface_scratch: 'Surface scratch',
+  defect: 'Defect',
+};
+
+/** Human-readable defect type. Falls back to a Title-Cased version of the
+ *  raw enum string for any unmapped value (e.g. future Jetson classes). */
+export function formatDefectType(raw) {
+  if (raw == null) return '';
+  const key = String(raw).trim().toLowerCase();
+  if (!key) return '';
+  if (DEFECT_TYPE_LABELS[key]) return DEFECT_TYPE_LABELS[key];
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function formatCapturedAt(iso) {
   if (!iso) return '';
   const d = new Date(iso);

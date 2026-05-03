@@ -27,7 +27,10 @@ export default function App() {
   const [dispatchOpen, setDispatchOpen] = useState(false);
   const [selectedPin, setSelectedPin] = useState(null);
   const [resolved, setResolved] = useState(false);
-  const [actionPending, setActionPending] = useState(false);
+  // Which mutation is in flight: 'acknowledge' | 'resolve' | 'reopen' | null.
+  // Drives both the global "disable other buttons" guard and the per-button
+  // spinner inside DefectActions.
+  const [pendingAction, setPendingAction] = useState(null);
   const [critCount, setCritCount] = useState(3);
   const [bannerOpen, setBannerOpen] = useState(false);
   const [criticalBannerDetail, setCriticalBannerDetail] = useState(null);
@@ -69,25 +72,30 @@ export default function App() {
     error: pinsError
   } = useRailPins({ onCriticalSeverity: onCriticalSeverityPin });
 
-  const openDetail = useCallback((pin) => {
+  // Inspect button (sidebar / topbar / critical alert) used to navigate to
+  // the full-page DefectDetail. We've consolidated to MapFocusPopup as the
+  // single overlay-style detail view, so all "Inspect" entry points now
+  // trigger the same modal.
+  const openMapDefect = useCallback((pin) => {
     if (pin?.id) {
       setSelectedPin(pin);
       setResolved(pin.sev === 'resolved');
-    } else {
-      setSelectedPin((prev) => {
-        if (prev) return prev;
-        const fallback = pins.find((p) => p.sev !== 'resolved') ?? pins[0] ?? null;
-        if (fallback) setResolved(fallback.sev === 'resolved');
-        return fallback;
-      });
     }
-    goPage('defect');
-  }, [goPage, pins]);
-  const openVideo = useCallback(() => setVideoOpen(true), []);
-  const openDispatch = useCallback(() => setDispatchOpen(true), []);
-  const openMapDefect = useCallback((pin) => {
     setMapFocus({ open: true, mode: 'defect', data: pin });
   }, []);
+  const openDetail = useCallback((pin) => {
+    let target = pin?.id ? pin : null;
+    if (!target) {
+      target = pins.find((p) => p.sev !== 'resolved') ?? pins[0] ?? null;
+    }
+    if (target?.id) {
+      setSelectedPin(target);
+      setResolved(target.sev === 'resolved');
+      setMapFocus({ open: true, mode: 'defect', data: target });
+    }
+  }, [pins]);
+  const openVideo = useCallback(() => setVideoOpen(true), []);
+  const openDispatch = useCallback(() => setDispatchOpen(true), []);
   const openMapCamera = useCallback((camera) => {
     setMapFocus({ open: true, mode: 'camera', data: camera });
   }, []);
@@ -101,7 +109,7 @@ export default function App() {
       return null;
     }
     pinActionInFlightRef.current = true;
-    setActionPending(true);
+    setPendingAction(path);
     try {
       const res = await fetch(`${API_URL}/pins/${encodeURIComponent(pinId)}/${path}`, {
         method: 'POST',
@@ -119,26 +127,32 @@ export default function App() {
       alert(`Network error: ${err.message}`);
       return null;
     } finally {
-      setActionPending(false);
+      setPendingAction(null);
       pinActionInFlightRef.current = false;
     }
   }, [selectedPin]);
 
   const handleAcknowledge = useCallback(async () => {
-    const updated = await callPinAction('acknowledge');
-    if (updated) {
-      setTimeout(() => goPage('dashboard'), 600);
-    }
-  }, [callPinAction, goPage]);
+    await callPinAction('acknowledge');
+    // MapFocusPopup stays open; realtime UPDATE flips the action set.
+  }, [callPinAction]);
 
   const handleResolve = useCallback(async () => {
     const updated = await callPinAction('resolve');
     if (updated) {
       setResolved(true);
       setCritCount((c) => Math.max(0, c - 1));
-      setTimeout(() => goPage('dashboard'), 1000);
     }
-  }, [callPinAction, goPage]);
+  }, [callPinAction]);
+
+  const handleReopen = useCallback(async () => {
+    const updated = await callPinAction('reopen');
+    if (updated) {
+      setResolved(false);
+      // Realtime UPDATE will sync selectedPin; resolved flag must reset now
+      // so the action card re-renders the active-pin button set immediately.
+    }
+  }, [callPinAction]);
 
   const fireCriticalAlert = useCallback(() => {
     goPage('dashboard');
@@ -162,6 +176,15 @@ export default function App() {
       setSelectedPin(null);
       setResolved(false);
       setDispatchOpen(false);
+      // Only close the map-focus overlay if it was showing THIS pin —
+      // the camera modal shares the same state and shouldn't be killed
+      // when an unrelated pin disappears from the feed.
+      setMapFocus((prev) => {
+        if (prev.open && prev.mode === 'defect' && prev.data?.id === selectedPin.id) {
+          return { open: false, mode: null, data: null };
+        }
+        return prev;
+      });
       if (page === 'defect') goPage('dashboard');
       return;
     }
@@ -219,8 +242,9 @@ export default function App() {
             onOpenDispatch={openDispatch}
             onAcknowledge={handleAcknowledge}
             onResolve={handleResolve}
+            onReopen={handleReopen}
             resolved={resolved}
-            actionPending={actionPending}
+            pendingAction={pendingAction}
           />
           <TrackView
             active={page === 'track'}
@@ -236,6 +260,13 @@ export default function App() {
         mode={mapFocus.mode}
         data={mapFocus.data}
         onClose={() => setMapFocus({ open: false, mode: null, data: null })}
+        pin={selectedPin}
+        resolved={resolved}
+        pendingAction={pendingAction}
+        onOpenDispatch={openDispatch}
+        onAcknowledge={handleAcknowledge}
+        onResolve={handleResolve}
+        onReopen={handleReopen}
       />
       <CriticalAlert
         flashKey={flashKey}

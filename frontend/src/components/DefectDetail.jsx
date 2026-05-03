@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon } from './Icons.jsx';
 import MiniMap from './MiniMap.jsx';
+import DefectActions from './DefectActions.jsx';
 
 const META_ROWS = [
   ['Defect type', 'transverse_crack'],
@@ -32,8 +33,9 @@ export default function DefectDetail({
   onOpenDispatch,
   onAcknowledge,
   onResolve,
+  onReopen,
   resolved,
-  actionPending,
+  pendingAction,
 }) {
   const [thumb, setThumb] = useState(2);
 
@@ -42,8 +44,6 @@ export default function DefectDetail({
   const pinTitle = selectedPin?.type
     ? `${selectedPin.type} · ${selectedPin.mp ?? ''}`.trim()
     : 'Transverse crack · railhead';
-  const isNew = pinStatus === 'new';
-
   return (
     <section className={`page ${active ? 'active' : ''}`}>
       <div className="page-head">
@@ -151,33 +151,15 @@ export default function DefectDetail({
             ))}
           </div>
 
-          <div className="meta-card">
-            <h3>Actions</h3>
-            <div className="actions-stack">
-              <button
-                className="btn danger"
-                onClick={onOpenDispatch}
-                disabled={!selectedPin || actionPending || pinStatus === 'resolved'}
-              >
-                <Icon name="i-send" />Dispatch crew now
-              </button>
-              <button
-                className="btn"
-                onClick={onAcknowledge}
-                disabled={!selectedPin || actionPending || !isNew}
-              >
-                <Icon name="i-eye" />
-                {pinStatus === 'acknowledged' ? 'Acknowledged' : 'Acknowledge (low priority)'}
-              </button>
-              <button
-                className="btn success"
-                onClick={onResolve}
-                disabled={!selectedPin || actionPending || resolved || pinStatus === 'resolved'}
-              >
-                <Icon name="i-check" />{resolved || pinStatus === 'resolved' ? 'Resolved' : 'Mark as resolved'}
-              </button>
-            </div>
-          </div>
+          <DefectActions
+            pin={selectedPin}
+            resolved={resolved}
+            pendingAction={pendingAction}
+            onOpenDispatch={onOpenDispatch}
+            onAcknowledge={onAcknowledge}
+            onResolve={onResolve}
+            onReopen={onReopen}
+          />
         </div>
       </div>
     </section>
