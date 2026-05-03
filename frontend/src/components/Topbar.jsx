@@ -4,8 +4,7 @@ import { Icon } from './Icons.jsx';
 const PAGE_NAMES = {
   dashboard: 'Dashboard',
   defect: 'Defect · DEF-2026-04891',
-  track: 'Track · Corvallis–Albany',
-  feed: 'Live feed · T-422'
+  track: 'Track · Corvallis–Albany'
 };
 
 export default function Topbar({ page, onTriggerCritical }) {

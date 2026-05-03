@@ -1158,58 +1158,69 @@
   /* Built-in zoom controls (we hide them and use our custom) */
   .leaflet-control-zoom { display: none !important; }
 
-  /* Pin marker (Leaflet div-icon) */
+  /* Pin marker (Leaflet div-icon) — teardrop map pin */
   .leaflet-pin {
-    width: 22px;
-    height: 30px;
+    width: 26px;
+    height: 32px;
     position: relative;
     cursor: pointer;
     transition: transform 0.15s;
+    color: var(--warn);
   }
-  .leaflet-pin:hover { transform: scale(1.18); z-index: 1000; }
-  .leaflet-pin-head {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 2px solid #0a0d10;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+  .leaflet-pin:hover { transform: scale(1.12); z-index: 1000; }
+  .leaflet-pin-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 0;
+    overflow: visible;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
   }
-  .leaflet-pin-tip {
+  .leaflet-pin-drop {
+    stroke: #0a0d10;
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
+  }
+  .leaflet-pin-thumb {
     position: absolute;
     left: 50%;
-    bottom: 1px;
-    width: 10px;
-    height: 10px;
-    transform: translateX(-50%) rotate(45deg);
-    transform-origin: center;
-    border-radius: 2px;
+    top: 14%;
+    width: 38%;
+    height: 29%;
+    transform: translateX(-50%);
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1.5px solid #0a0d10;
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 1;
   }
-  .leaflet-pin.crit .leaflet-pin-head,
-  .leaflet-pin.crit .leaflet-pin-tip { background: var(--crit); }
-  .leaflet-pin.high .leaflet-pin-head,
-  .leaflet-pin.high .leaflet-pin-tip { background: var(--high); }
-  .leaflet-pin.med .leaflet-pin-head,
-  .leaflet-pin.med .leaflet-pin-tip { background: var(--warn); }
-  .leaflet-pin.low .leaflet-pin-head,
-  .leaflet-pin.low .leaflet-pin-tip { background: var(--info); }
-  .leaflet-pin.resolved .leaflet-pin-head,
-  .leaflet-pin.resolved .leaflet-pin-tip { background: var(--ok); opacity: 0.65; }
+  .leaflet-pin.crit { color: var(--crit); }
+  .leaflet-pin.high { color: var(--high); }
+  .leaflet-pin.med { color: var(--warn); }
+  .leaflet-pin.low { color: var(--info); }
+  .leaflet-pin.resolved { color: var(--ok); opacity: 0.72; }
 
-  .leaflet-pin.crit .leaflet-pin-head::before {
+  .leaflet-pin.crit:not(.has-thumb)::before {
     content: '';
     position: absolute;
-    inset: -5px;
+    left: 50%;
+    top: 34%;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
     background: var(--crit);
-    opacity: 0.4;
+    opacity: 0.45;
     animation: leaflet-pin-pulse 1.4s ease-out infinite;
     z-index: -1;
   }
   @keyframes leaflet-pin-pulse {
-    0% { transform: scale(0.5); opacity: 0.6; }
-    100% { transform: scale(2.4); opacity: 0; }
+    0% { transform: translate(-50%, -50%) scale(0.45); opacity: 0.65; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
   }
 
   /* Just-dropped pin - shows a bigger anim once */
@@ -1220,6 +1231,18 @@
     0%   { transform: scale(0) translateY(-30px); opacity: 0; }
     60%  { transform: scale(1.6) translateY(0);   opacity: 1; }
     100% { transform: scale(1)   translateY(0);   opacity: 1; }
+  }
+
+  /* Defect page mini-map: smaller pins */
+  #defect-mini-map-leaflet .leaflet-pin--compact {
+    width: 18px;
+    height: 22px;
+  }
+  #defect-mini-map-leaflet .leaflet-pin--compact .leaflet-pin-thumb {
+    top: 12%;
+    width: 40%;
+    height: 30%;
+    border-width: 1px;
   }
 
   /* Train marker */
@@ -1304,6 +1327,47 @@
     color: var(--text-3); margin-bottom: 4px;
   }
   .pin-popup-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .pin-popup-preview {
+    margin: -4px 0 10px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    max-width: 220px;
+  }
+  .pin-popup-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+    vertical-align: middle;
+  }
+  .pin-popup-stats {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .pin-popup-stat {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .pin-popup-stat-label {
+    font-family: var(--sans);
+    color: var(--text-3);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pin-popup-stat-val {
+    font-family: var(--mono);
+    color: var(--text-1);
+    word-break: break-word;
+  }
   .pin-popup-meta {
     font-family: var(--mono); font-size: 11px;
     color: var(--text-2); line-height: 1.6;
@@ -1381,6 +1445,15 @@
     object-fit: cover;
     display: block;
   }
+  .map-focus-media-empty {
+    min-height: 200px;
+    display: grid;
+    place-items: center;
+    color: var(--text-3);
+    font-size: 13px;
+    padding: 24px;
+    text-align: center;
+  }
   .map-focus-meta {
     padding: 18px;
     display: flex;
@@ -1412,4 +1485,9 @@
     display: block;
     object-fit: cover;
     background: #000;
+  }
+  /* Hide native volume / mute controls (keep play, timeline, fullscreen where offered) */
+  .map-focus-video video::-webkit-media-controls-volume-slider,
+  .map-focus-video video::-webkit-media-controls-mute-button {
+    display: none !important;
   }

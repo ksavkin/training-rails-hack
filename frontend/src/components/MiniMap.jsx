@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { ROUTES, CITIES, FOCUS_PIN, TILE_PROVIDERS } from '../data/railData.js';
+import { makeDefectPinIcon } from '../lib/leafletPinIcon.js';
 
 function setupTiles(map) {
   let i = 0;
@@ -25,14 +26,6 @@ function setupTiles(map) {
   next();
 }
 
-function makePinIcon(sev) {
-  return L.divIcon({
-    className: 'pin-icon-wrap',
-    html: `<div class="leaflet-pin ${sev}"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7]
-  });
-}
 
 export default function MiniMap({ pageActive, pins = [] }) {
   const containerRef = useRef(null);
@@ -97,11 +90,11 @@ export default function MiniMap({ pageActive, pins = [] }) {
     pins
       .filter((p) => p.line === '1')
       .forEach((pin) => {
-        const m = L.marker([pin.lat, pin.lon], { icon: makePinIcon(pin.sev) }).addTo(map);
+        const m = L.marker([pin.lat, pin.lon], { icon: makeDefectPinIcon(pin, { compact: true }) }).addTo(map);
         routePinsRef.current.push(m);
       });
     focusMarkerRef.current = L.marker([FOCUS_PIN.lat, FOCUS_PIN.lon], {
-      icon: makePinIcon(FOCUS_PIN.sev)
+      icon: makeDefectPinIcon(FOCUS_PIN, { compact: true })
     }).addTo(map);
   }, [pins]);
 

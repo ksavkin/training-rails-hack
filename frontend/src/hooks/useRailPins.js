@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getSupabaseBrowserClient, resolveSupabaseEnv, supabaseEnvIssueMessage } from '../lib/supabaseClient.js';
-import { rowToPin, sortPinsByCapturedAtDesc } from '../lib/pinMappers.js';
+import {
+  rowToPin,
+  sortPinsByCapturedAtDesc,
+  shouldTriggerCriticalRealtimeAlert
+} from '../lib/pinMappers.js';
 import { FALLBACK_PINS } from '../data/railData.js';
 
 const TABLE = 'pins';
@@ -27,8 +31,12 @@ function applyRealtimePayload(prevPins, payload) {
  * Loads defect pins from Supabase and subscribes to realtime changes.
  * Uses {@link FALLBACK_PINS} only when Supabase env is completely unset (local demo).
  * If env is set but invalid, or the query fails, shows an error and empty pins (no fake data).
+ *
+ * @param {{ onCriticalSeverity?: (pin: object) => void }} [options]
  */
-export function useRailPins() {
+export function useRailPins(options = {}) {
+  const onCriticalSeverityRef = useRef(null);
+  onCriticalSeverityRef.current = options.onCriticalSeverity;
   const envSnapshot = useMemo(() => resolveSupabaseEnv(), []);
   const client = useMemo(() => getSupabaseBrowserClient(), []);
 
@@ -99,6 +107,17 @@ export function useRailPins() {
         'postgres_changes',
         { event: '*', schema: 'public', table: TABLE },
         (payload) => {
+          const { eventType, new: nextRow, old: prevRow } = payload;
+          if (
+            (eventType === 'INSERT' || eventType === 'UPDATE') &&
+            nextRow &&
+            shouldTriggerCriticalRealtimeAlert(
+              eventType === 'INSERT' ? null : prevRow,
+              nextRow
+            )
+          ) {
+            onCriticalSeverityRef.current?.(rowToPin(nextRow));
+          }
           setPins((prev) => applyRealtimePayload(prev, payload));
         }
       )

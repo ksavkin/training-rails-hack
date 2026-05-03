@@ -158,17 +158,27 @@ class _Dedup(object):
 # ---------------------------------------------------------------------------
 # Supabase upload + FastAPI POST  (fire-and-forget thread)
 # ---------------------------------------------------------------------------
-def _upload_and_post(supabase_url, supabase_key, fastapi_url, secret,
+def _upload_and_post(supabase_url, supabase_key, fastapi_url,
                      device_id, frame, det, gps, captured_at):
     frame_h, frame_w = frame.shape[:2]
 
     x1, y1, x2, y2 = (int(v) for v in det["bbox"])
     px = int((x2 - x1) * 0.10)
     py = int((y2 - y1) * 0.10)
+    crop_x = max(0, x1 - px)
+    crop_y = max(0, y1 - py)
     crop = frame[
-        max(0, y1 - py):min(frame_h, y2 + py),
-        max(0, x1 - px):min(frame_w, x2 + px),
-    ]
+        crop_y:min(frame_h, y2 + py),
+        crop_x:min(frame_w, x2 + px),
+    ].copy()
+
+    # Draw bbox relative to crop origin so it's visible in the uploaded image
+    cv2.rectangle(
+        crop,
+        (x1 - crop_x, y1 - crop_y),
+        (x2 - crop_x, y2 - crop_y),
+        (0, 0, 255), 2,
+    )
 
     ok, buf = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 85])
     if not ok:
@@ -178,51 +188,78 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url, secret,
     date_str   = time.strftime("%Y-%m-%d", time.gmtime())
     ts_ms      = int(time.time() * 1000)
     uid6       = uuid.uuid4().hex[:6]
-    image_path = "{}/{}_{}_{}.jpg".format(date_str, device_id, ts_ms, uid6)
+    image_path = "pins/{}/{}_{}_{}.jpg".format(date_str, device_id, ts_ms, uid6)
 
-    # Step 1: Supabase Storage
+    # Step 1: Supabase Storage (direct REST API, no supabase-py needed)
     try:
-        from supabase import create_client
-        sb = create_client(supabase_url, supabase_key)
-        sb.storage.from_("defect-images").upload(
-            path=image_path,
-            file=buf.tobytes(),
-            file_options={"content-type": "image/jpeg"},
+        upload_url = "{}/storage/v1/object/defect-images/{}".format(supabase_url, image_path)
+        resp = requests.post(
+            upload_url,
+            data=buf.tobytes(),
+            headers={
+                "Authorization": "Bearer {}".format(supabase_key),
+                "Content-Type": "image/jpeg",
+            },
+            timeout=15,
         )
+        resp.raise_for_status()
+        public_url = "{}/storage/v1/object/public/defect-images/{}".format(supabase_url, image_path)
+        print("[upload] Stored: {}".format(public_url))
     except Exception as exc:
         print("[upload] Storage upload failed: {} -- skipping POST".format(exc))
         return
 
-    # Step 2: FastAPI /detect
-    defect_type = DEFECT_TYPE_MAP.get(det["class_name"], "transverse_crack")
-    payload = {
-        "device_id":    device_id,
-        "defect_type":  defect_type,
-        "confidence":   round(float(det["confidence"]), 4),
-        "bbox":         {"x": x1, "y": y1, "w": x2 - x1, "h": y2 - y1},
-        "frame_width":  frame_w,
-        "frame_height": frame_h,
-        "lat":          gps.get("lat", 0.0),
-        "lon":          gps.get("lon", 0.0),
-        "image_path":   image_path,
-        "captured_at":  captured_at,
-    }
+    # Step 2: FastAPI /detect -- send relative storage path, get back severity
     try:
         resp = requests.post(
             "{}/detect".format(fastapi_url),
-            json=payload,
-            headers={"Authorization": "Bearer {}".format(secret)},
+            json={"image_path": image_path},
             timeout=10,
         )
-        if resp.status_code == 201:
-            body = resp.json()
-            print("[detect] pin {} sev={} ({})".format(
-                body["pin_id"], body["severity"], defect_type))
-        else:
+        if resp.status_code not in (200, 201):
             print("[detect] /detect returned {}: {}".format(
                 resp.status_code, resp.text[:120]))
+            return
+        severity = int(resp.json().get("severity"))
     except Exception as exc:
         print("[detect] POST failed: {}".format(exc))
+        return
+
+    # Step 3: Write full pin record directly to Supabase
+    defect_type = DEFECT_TYPE_MAP.get(det["class_name"], "transverse_crack")
+    pin = {
+        "device_id":   device_id,
+        "line_id":     1,
+        "defect_type": defect_type,
+        "confidence":  round(float(det["confidence"]), 4),
+        "bbox":        [x1, y1, x2 - x1, y2 - y1],
+        "lat":         gps.get("lat", 0.0),
+        "lon":         gps.get("lon", 0.0),
+        "speed_mps":   gps.get("speed", None),
+        "image_path":  public_url,
+        "severity":    severity,
+        "captured_at": captured_at,
+    }
+    try:
+        resp = requests.post(
+            "{}/rest/v1/pins".format(supabase_url),
+            json=pin,
+            headers={
+                "Authorization": "Bearer {}".format(supabase_key),
+                "apikey":        supabase_key,
+                "Content-Type":  "application/json",
+                "Prefer":        "return=representation",
+            },
+            timeout=10,
+        )
+        if resp.status_code in (200, 201):
+            pin_id = resp.json()[0]["id"]
+            print("[pin] created {} sev={} ({})".format(pin_id, severity, defect_type))
+        else:
+            print("[pin] insert failed ({}): {}".format(
+                resp.status_code, resp.text[:120]))
+    except Exception as exc:
+        print("[pin] insert failed: {}".format(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -307,11 +344,10 @@ def main():
     args = parser.parse_args()
 
     # Env vars
-    supabase_url  = os.environ.get("SUPABASE_URL", "")
-    supabase_key  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-    fastapi_url   = os.environ.get("FASTAPI_URL", "")
-    shared_secret = os.environ.get("RAILPIN_SHARED_SECRET", "")
-    device_id     = os.environ.get("DEVICE_ID", "jetson-01")
+    supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    fastapi_url  = os.environ.get("FASTAPI_URL", "").rstrip("/")
+    device_id    = os.environ.get("DEVICE_ID", "jetson-01")
 
     upload_on = not args.stream_only
     if upload_on:
@@ -319,7 +355,6 @@ def main():
             ("SUPABASE_URL", supabase_url),
             ("SUPABASE_SERVICE_ROLE_KEY", supabase_key),
             ("FASTAPI_URL", fastapi_url),
-            ("RAILPIN_SHARED_SECRET", shared_secret),
         ] if not v]
         if missing:
             print("[warn] Missing env vars: {} -- running stream-only".format(
@@ -412,7 +447,7 @@ def main():
                                 target=_upload_and_post,
                                 args=(
                                     supabase_url, supabase_key,
-                                    fastapi_url, shared_secret, device_id,
+                                    fastapi_url, device_id,
                                     frame.copy(), best, gps_snap, captured_at,
                                 ),
                                 daemon=True,
