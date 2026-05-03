@@ -148,7 +148,11 @@ export const FALLBACK_PINS = FALLBACK_PINS_BASE;
 export const FOCUS_PIN = {
   id: 'DEF-04891', line: '1', sev: 'crit',
   type: 'Transverse crack', lat: 44.6268666785878, lon: -123.126360560348, mp: '24+340', conf: 0.87,
-  capturedAt: '2026-04-29 14:23:11'
+  capturedAt: '2026-04-29 14:23:11',
+  // Local-only demo pin (Ctrl+Shift+A trigger). Not in the realtime pins
+  // feed, so the App-level "selectedPin disappeared from feed → close modal"
+  // cleanup must skip it. Flag is checked in App.jsx.
+  isDemo: true
 };
 
 export const CAMERAS = [

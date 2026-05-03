@@ -6,7 +6,7 @@ from app.pins import get_pin, mark_dispatched, rollback_dispatch, set_pin_sms_si
 from app.sms import send_sms
 
 REQUIRED_DISPATCH_FIELDS = ("pin_id", "lat", "lon", "severity", "timestamp")
-ALLOWED_PREV_STATUSES = ("new", "acknowledged")
+ALLOWED_PREV_STATUSES = ("new", "edited", "acknowledged")
 
 log = logging.getLogger(__name__)
 

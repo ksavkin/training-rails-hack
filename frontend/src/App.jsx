@@ -98,7 +98,7 @@ export default function App() {
   }, []);
 
   const pinActionInFlightRef = useRef(false);
-  const callPinAction = useCallback(async (path) => {
+  const callPinAction = useCallback(async (path, body) => {
     if (pinActionInFlightRef.current) return null;
     const pinId = selectedPin?.id;
     if (!pinId) {
@@ -108,14 +108,20 @@ export default function App() {
     pinActionInFlightRef.current = true;
     setPendingAction(path);
     try {
-      const res = await fetch(`${API_URL}/pins/${encodeURIComponent(pinId)}/${path}`, {
-        method: 'POST',
-        headers: apiHeaders(),
-      });
+      const init = { method: 'POST', headers: apiHeaders() };
+      if (body !== undefined) init.body = JSON.stringify(body);
+      const res = await fetch(`${API_URL}/pins/${encodeURIComponent(pinId)}/${path}`, init);
       if (!res.ok) {
-        const body = await res.text();
-        console.error(`[pin ${path}] ${res.status}: ${body}`);
-        alert(`Failed to ${path} pin: ${body}`);
+        const text = await res.text();
+        let friendly = text;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed && typeof parsed === 'object' && parsed.detail) {
+            friendly = typeof parsed.detail === 'string' ? parsed.detail : JSON.stringify(parsed.detail);
+          }
+        } catch { /* not JSON */ }
+        console.error(`[pin ${path}] ${res.status}: ${friendly}`);
+        alert(`Failed to ${path} pin: ${friendly}`);
         return null;
       }
       return await res.json();
@@ -151,6 +157,18 @@ export default function App() {
     }
   }, [callPinAction]);
 
+  // payload: { defectType?: string, severity?: number }
+  // Caller (MapFocusPopup) only puts in fields that actually changed, so
+  // empty-payload requests never reach the backend (which 400s on empty).
+  const handleEdit = useCallback(async (payload) => {
+    const body = {};
+    if (payload?.defectType !== undefined) body.defect_type = payload.defectType;
+    if (payload?.severity !== undefined) body.severity = payload.severity;
+    if (Object.keys(body).length === 0) return false;
+    const updated = await callPinAction('edit', body);
+    return !!updated;
+  }, [callPinAction]);
+
   const fireCriticalAlert = useCallback(() => {
     goPage('dashboard');
     setFlashKey((k) => k + 1);
@@ -166,8 +184,12 @@ export default function App() {
   // pin disappears from the feed (DELETE event, RLS resolved-after-24h cutoff,
   // filter change), clear the selection so action handlers and the dispatch
   // modal don't fire against a non-existent record.
+  //
+  // Skip local-only demo pins (FOCUS_PIN flagged isDemo=true): they live in
+  // memory and never appear in the realtime feed, so this guard would close
+  // their modal the instant it opened.
   useEffect(() => {
-    if (!selectedPin?.id) return;
+    if (!selectedPin?.id || selectedPin.isDemo) return;
     const updated = pins.find((p) => p.id === selectedPin.id);
     if (!updated) {
       setSelectedPin(null);
@@ -251,6 +273,7 @@ export default function App() {
         onAcknowledge={handleAcknowledge}
         onResolve={handleResolve}
         onReopen={handleReopen}
+        onEdit={handleEdit}
       />
       <CriticalAlert
         flashKey={flashKey}

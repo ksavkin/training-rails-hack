@@ -586,6 +586,12 @@
   .status-pill.disp::before { background: var(--info); }
   .status-pill.resolved { background: rgba(74,222,128,0.1); color: var(--ok); }
   .status-pill.resolved::before { background: var(--ok); }
+  /* `edited` = operator manually corrected defect_type while still pre-triage.
+     Distinct accent (purple/violet) to signal "human-validated, awaiting
+     dispatch decision" — different from raw `new` (red, unverified) and from
+     `acknowledged` (amber, triage decision committed). */
+  .status-pill.edited { background: rgba(167,139,250,0.12); color: #b9a6ff; }
+  .status-pill.edited::before { background: #b9a6ff; }
 
   /* ============== DEFECT DETAIL ============== */
   .defect-layout {
@@ -1590,9 +1596,67 @@
   }
   .map-focus-title-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
   }
+  /* Pencil button next to the defect type — only rendered when status is
+     pre-triage. Subtle by default (text-3), brightens on hover. Sits inline
+     with the type label so the affordance is discoverable without dominating
+     the header. */
+  .map-focus-edit-pencil {
+    width: 24px;
+    height: 24px;
+    color: var(--text-3);
+    border-radius: 4px;
+    transition: color 120ms, background 120ms;
+  }
+  .map-focus-edit-pencil:hover:not(:disabled) {
+    color: var(--text-0);
+    background: rgba(255,255,255,0.06);
+  }
+  .map-focus-edit-pencil svg { width: 14px; height: 14px; }
+  /* Edit-mode container: dropdown + Save + Cancel sit on the same row as
+     the severity tag. Wraps to a new line on narrow modals (gap inherits
+     from .map-focus-title-row). */
+  .map-focus-title-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .map-focus-type-select,
+  .map-focus-sev-select {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    height: 28px;
+    padding: 0 8px;
+    background: var(--bg-2);
+    color: var(--text-0);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .map-focus-type-select { min-width: 180px; }
+  /* Severity band dropdown is mono+UPPERCASE to mirror the static SEV tag
+     it replaces — visual weight in the header doesn't shift between view
+     and edit modes. */
+  .map-focus-sev-select {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    min-width: 86px;
+  }
+  .map-focus-type-select:focus,
+  .map-focus-sev-select:focus {
+    outline: none;
+    border-color: var(--accent, #b9a6ff);
+  }
+  .map-focus-type-select:disabled,
+  .map-focus-sev-select:disabled { opacity: 0.6; cursor: not-allowed; }
   .map-focus-title-sev {
     font-family: var(--mono);
     font-weight: 700;

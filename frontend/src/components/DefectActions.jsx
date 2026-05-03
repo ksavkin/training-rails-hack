@@ -3,9 +3,9 @@ import { Icon } from './Icons.jsx';
 /**
  * Action buttons for a defect pin.
  *
- * Active pin (status in {new, acknowledged, dispatched}):
+ * Active pin (status in {new, edited, acknowledged, dispatched}):
  *   - Dispatch crew now
- *   - Acknowledge (only valid from 'new')
+ *   - Acknowledge (only valid from pre-triage: 'new' or 'edited')
  *   - Mark as resolved
  *
  * Resolved pin (status='resolved'):
@@ -14,8 +14,8 @@ import { Icon } from './Icons.jsx';
  * Used by MapFocusPopup as the single source of pin actions.
  *
  * `pendingAction`: name of the in-flight mutation ('acknowledge' | 'resolve'
- * | 'reopen' | null). The matching button shows an inline spinner; all
- * others are disabled to prevent racing requests.
+ * | 'reopen' | 'edit' | null). The matching button shows an inline spinner;
+ * all others are disabled to prevent racing requests.
  */
 export default function DefectActions({
   pin,
@@ -27,7 +27,11 @@ export default function DefectActions({
   onReopen,
 }) {
   const pinStatus = pin?.status ?? 'new';
-  const isNew = pinStatus === 'new';
+  // Pre-triage: pin still represents raw or human-corrected detection data,
+  // not yet acted on. Mirrors backend PRE_TRIAGE_STATUSES. Acknowledge is
+  // gated on this, since acking from {acknowledged, dispatched} makes no
+  // sense.
+  const isPreTriage = pinStatus === 'new' || pinStatus === 'edited';
   const isResolved = resolved || pinStatus === 'resolved';
   const anyPending = !!pendingAction;
   const enabled = !!pin && !anyPending;
@@ -68,7 +72,7 @@ export default function DefectActions({
         <button
           className="btn"
           onClick={onAcknowledge}
-          disabled={!enabled || !isNew}
+          disabled={!enabled || !isPreTriage}
         >
           {acking ? <span className="spinner" /> : <Icon name="i-eye" />}
           {acking

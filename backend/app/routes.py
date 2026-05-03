@@ -4,7 +4,7 @@ from app.auth import verify_api_token
 from app.config import APP_NAME
 from app.detections import detect_defect
 from app.dispatch import dispatch_operator
-from app.pins import acknowledge_pin, reopen_pin, resolve_pin
+from app.pins import acknowledge_pin, edit_pin, reopen_pin, resolve_pin
 
 router = APIRouter()
 
@@ -48,3 +48,20 @@ async def resolve(pin_id: str):
 @router.post("/pins/{pin_id}/reopen", dependencies=[Depends(verify_api_token)])
 async def reopen(pin_id: str):
     return reopen_pin(pin_id)
+
+
+@router.post("/pins/{pin_id}/edit", dependencies=[Depends(verify_api_token)])
+async def edit(pin_id: str, payload: dict | None = None):
+    if not payload:
+        raise HTTPException(status_code=400, detail="Missing JSON request body")
+    defect_type = payload.get("defect_type")
+    severity = payload.get("severity")
+    if defect_type is None and severity is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide at least one of 'defect_type' or 'severity'",
+        )
+    return edit_pin(
+        pin_id,
+        defect_type=str(defect_type) if defect_type is not None else None,
+        severity=severity,

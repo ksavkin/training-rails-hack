@@ -84,19 +84,81 @@ def _patch(pin_id: str, set_fields: dict, allowed_from: list[str] | None = None)
     return data[0]
 
 
+# Locked enum for `defect_type` (mirrors jetson/jetson_main.py:DEFECT_TYPE_MAP
+# output values). Used to validate manual edits — the column itself is plain
+# text, so the enforcement lives here.
+DEFECT_TYPE_ENUM = (
+    "spalling",
+    "transverse_crack",
+    "longitudinal_crack",
+    "joint_defect",
+    "missing_fastener",
+)
+
+
+# Pre-triage statuses: pin still represents raw or human-corrected detection
+# data, not yet acted on. Edit + acknowledge accept these.
+PRE_TRIAGE_STATUSES = ["new", "edited"]
+
+
 def acknowledge_pin(pin_id: str) -> dict:
     return _patch(
         pin_id,
         {"status": "acknowledged", "acknowledged_at": _now_iso()},
-        allowed_from=["new"],
+        allowed_from=PRE_TRIAGE_STATUSES,
     )
+
+
+def edit_pin(
+    pin_id: str,
+    defect_type: str | None = None,
+    severity: float | None = None,
+) -> dict:
+    """Manual correction of `defect_type` and/or `severity` while pin is pre-triage.
+
+    Sets status to 'edited' so operators can distinguish human-validated
+    classifications from raw model output. Once a pin is acknowledged or
+    dispatched the classification is locked — refuses with 409.
+
+    `severity` is a float in [1.0, 10.0]. Frontend dropdowns map LOW/MED/
+    HIGH/CRIT bands to representative numbers (3/5/7/9) before sending; the
+    backend just trusts the float and rounds to one decimal to match the
+    `numeric(3,1)` column. At least one of {defect_type, severity} must be
+    provided — empty edits are rejected to avoid spamming status='edited'
+    transitions.
+    """
+    if defect_type is None and severity is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide at least one of defect_type or severity",
+        )
+    fields: dict = {"status": "edited"}
+    if defect_type is not None:
+        if defect_type not in DEFECT_TYPE_ENUM:
+            raise HTTPException(
+                status_code=400,
+                detail=f"defect_type must be one of {list(DEFECT_TYPE_ENUM)}",
+            )
+        fields["defect_type"] = defect_type
+    if severity is not None:
+        try:
+            sev_f = float(severity)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="severity must be a number") from exc
+        if not (1.0 <= sev_f <= 10.0):
+            raise HTTPException(
+                status_code=400,
+                detail="severity must be in [1.0, 10.0]",
+            )
+        fields["severity"] = round(sev_f, 1)
+    return _patch(pin_id, fields, allowed_from=PRE_TRIAGE_STATUSES)
 
 
 def resolve_pin(pin_id: str) -> dict:
     return _patch(
         pin_id,
         {"status": "resolved", "resolved_at": _now_iso()},
-        allowed_from=["new", "acknowledged", "dispatched"],
+        allowed_from=PRE_TRIAGE_STATUSES + ["acknowledged", "dispatched"],
     )
 
 
@@ -133,11 +195,11 @@ def reopen_pin(pin_id: str) -> dict:
 
 
 def mark_dispatched(pin_id: str, sms_sid: str | None = None) -> dict:
-    """Atomically claim dispatch slot. Refuses if pin not in {new, acknowledged}."""
+    """Atomically claim dispatch slot. Refuses if pin not pre-triage or acknowledged."""
     fields: dict = {"status": "dispatched", "dispatched_at": _now_iso()}
     if sms_sid:
         fields["sms_sid"] = sms_sid
-    return _patch(pin_id, fields, allowed_from=["new", "acknowledged"])
+    return _patch(pin_id, fields, allowed_from=PRE_TRIAGE_STATUSES + ["acknowledged"])
 
 
 def set_pin_sms_sid(pin_id: str, sms_sid: str) -> dict:
