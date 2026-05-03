@@ -8,6 +8,7 @@ import { makeDefectPinIcon, isPlaceholderMapImageUrl } from '../lib/leafletPinIc
 const HeatmapOverlay = HeatmapOverlayFactory?.default ?? HeatmapOverlayFactory;
 
 const SEV_HEAT = { crit: 10, high: 7, med: 5, low: 3, resolved: 2 };
+const CAMERA_LOOP_MS = 120000;
 
 function filterPinsByLine(pinList, lineFilter) {
   if (lineFilter === 'all') return pinList;
@@ -275,7 +276,23 @@ function boundsFromAllRoutes() {
   return L.latLngBounds(pts);
 }
 
-function animateTrainAlongRoute(map, marker, coords, durationMs, stopRef) {
+function buildRouteSegments(coords) {
+  if (!Array.isArray(coords) || coords.length < 2) return null;
+  const segments = [];
+  let total = 0;
+  for (let i = 0; i < coords.length - 1; i += 1) {
+    const a = L.latLng(coords[i][0], coords[i][1]);
+    const b = L.latLng(coords[i + 1][0], coords[i + 1][1]);
+    const length = a.distanceTo(b);
+    segments.push({ a, b, length, at: total });
+    total += length;
+  }
+  return total > 0 ? { segments, total } : null;
+}
+
+function animateTrainAlongRoute(map, marker, coords, durationMs, stopRef, phaseOffset = 0) {
+  const route = buildRouteSegments(coords);
+  if (!route) return;
   const t0 = performance.now();
   function step(now) {
     if (stopRef.current) return;
@@ -284,13 +301,13 @@ function animateTrainAlongRoute(map, marker, coords, durationMs, stopRef) {
 
     const t = typeof now === 'number' ? now : performance.now();
     const elapsed = t - t0;
-    const progress = (elapsed % durationMs) / durationMs;
-    const idx = progress * (coords.length - 1);
-    const i0 = Math.floor(idx);
-    const i1 = Math.min(i0 + 1, coords.length - 1);
-    const f = idx - i0;
-    const lat = coords[i0][0] + (coords[i1][0] - coords[i0][0]) * f;
-    const lon = coords[i0][1] + (coords[i1][1] - coords[i0][1]) * f;
+    const progress = ((elapsed % durationMs) / durationMs + phaseOffset) % 1;
+    const targetDistance = progress * route.total;
+    const segment = route.segments.find((item) => targetDistance <= item.at + item.length) ?? route.segments[route.segments.length - 1];
+    const localDistance = Math.max(0, targetDistance - segment.at);
+    const f = segment.length > 0 ? localDistance / segment.length : 0;
+    const lat = segment.a.lat + (segment.b.lat - segment.a.lat) * f;
+    const lon = segment.a.lng + (segment.b.lng - segment.a.lng) * f;
     marker.setLatLng([lat, lon]);
 
     requestAnimationFrame(step);
@@ -365,8 +382,8 @@ const RailPinMap = forwardRef(function RailPinMap(
 
     const startTrainAnimations = () => {
       map.invalidateSize();
-      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, 900000, stopRef);
-      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 900000, stopRef);
+      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, CAMERA_LOOP_MS, stopRef, 0.08);
+      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, CAMERA_LOOP_MS, stopRef, 0.57);
     };
 
     map.whenReady(() => {
