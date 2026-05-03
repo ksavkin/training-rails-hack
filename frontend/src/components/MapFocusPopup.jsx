@@ -9,6 +9,8 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
   if (!open || !data) return null;
 
   const isDefect = mode === 'defect';
+  const defectId = isDefect ? String(data.id).replace(/^DEF-/, 'DEFECT-') : data.id;
+  const defectTitle = String(defectId).startsWith('DEFECT-') ? defectId : `Defect ${defectId}`;
 
   return (
     <div
@@ -20,10 +22,10 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
       <div className={`map-focus-modal ${isDefect ? 'defect' : 'camera'}`}>
         <div className="map-focus-head">
           <div>
-            <div className="title">{isDefect ? `Defect ${data.id}` : `Live camera ${data.id}`}</div>
+            <div className="title">{isDefect ? defectTitle : `Live camera ${data.id}`}</div>
             <div className="source-info">
               {isDefect
-                ? `MP ${data.mp} · track ${data.line} · conf ${data.conf}`
+                ? `Milepost ${data.mp} - Track ID ${data.line} - Confidence ${data.conf}`
                 : `${data.label} · ${data.source}`}
             </div>
           </div>
@@ -37,10 +39,8 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
               {data.imageUrl ? (
                 <img src={data.imageUrl} alt={`${data.id} defect`} />
               ) : (
-                <div className="map-focus-media-empty">
-                  No image — missing or empty <span className="mono">image_path</span> on this pin, or could not
-                  build a public URL (check <span className="mono">PUBLIC_SUPABASE_URL</span> in{' '}
-                  <span className="mono">frontend/.env</span> and restart dev server).
+                <div className="map-focus-media-empty stream-unavailable">
+                  Defect image unavailable
                 </div>
               )}
             </div>
@@ -107,3 +107,4 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
     </div>
   );
 }
+

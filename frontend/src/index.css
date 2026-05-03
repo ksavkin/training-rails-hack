@@ -1452,11 +1452,13 @@
     align-items: center;
     gap: 12px;
   }
-  .map-focus-head .title { font-size: 15px; font-weight: 700; }
+  .map-focus-head .title { font-size: 18px; font-weight: 800; }
   .map-focus-head .source-info {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-2);
+    margin-top: 3px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-1);
   }
   .map-focus-head .spacer { flex: 1; }
   .map-focus-defect-layout {
@@ -1475,13 +1477,20 @@
     display: block;
   }
   .map-focus-media-empty {
-    min-height: 200px;
+    width: 100%;
+    height: 100%;
+    min-height: 520px;
     display: grid;
     place-items: center;
-    color: var(--text-3);
-    font-size: 13px;
+    background: #161a1d;
+    color: var(--text-2);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
     padding: 24px;
     text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
   .map-focus-meta {
     padding: 20px;
