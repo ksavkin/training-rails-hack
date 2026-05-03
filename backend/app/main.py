@@ -1,21 +1,14 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 
-app = FastAPI()
+from app.routes import router
 
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-@app.get("/")
-async def root():
-    return {"message": "API is running"}
+APP_NAME = os.getenv("APP_NAME", "training-rails")
 
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
-# Add more routes below.
-# Example:
-#
-# @app.post("/clients")
-# async def create_client(client: dict):
-#     return client
+app = FastAPI(title=APP_NAME)
+app.include_router(router)

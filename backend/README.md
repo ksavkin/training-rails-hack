@@ -6,21 +6,34 @@ Simple FastAPI backend for training-rails.
 
 From the repository root:
 
-```powershell
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r backend\requirements.txt
+source .venv/Scripts/activate
+
+cd backend
+pip install -r requirements.txt
+cp .env.example .env
 ```
 
 ## Run
 
-```powershell
-Set-Location backend
+```bash
 uvicorn app.main:app --reload
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
 
-Define API routes in `backend/app/main.py`.
+Define API routes in `backend/app/routes.py`.
 
-Built-in docs are available at `http://127.0.0.1:8000/docs`.
+## PowerShell
+
+If you are using PowerShell instead of bash:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r backend\requirements.txt
+Copy-Item backend\.env.example backend\.env
+Set-Location backend
+uvicorn app.main:app --reload
+```
