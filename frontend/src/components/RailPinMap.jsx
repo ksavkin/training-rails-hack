@@ -75,14 +75,16 @@ function escapeAttr(s) {
   return escapeHtml(s).replace(/'/g, '&#39;');
 }
 
-function statRow(label, value) {
+function statRow(label, value, valueClass = '') {
   if (value == null || value === '') return '';
   return (
     '<div class="pin-popup-stat">' +
     '<span class="pin-popup-stat-label">' +
     escapeHtml(label) +
     '</span>' +
-    '<span class="pin-popup-stat-val">' +
+    '<span class="pin-popup-stat-val ' +
+    escapeHtml(valueClass) +
+    '">' +
     escapeHtml(String(value)) +
     '</span>' +
     '</div>'
@@ -106,12 +108,13 @@ function buildPopup(pin, onOpenDefect) {
         : '';
 
   const stats =
-    statRow('Line', pin.line) +
+    statRow('Track ID', pin.line) +
     statRow(
       'Severity',
       pin.severityNum != null
         ? String(pin.sev).toUpperCase() + ' · ' + pin.severityNum + '/10'
-        : String(pin.sev).toUpperCase()
+        : String(pin.sev).toUpperCase(),
+      'pin-popup-severity-' + pin.sev
     ) +
     statRow('Milepost', pin.mp) +
     statRow('Confidence', confStr) +
@@ -196,8 +199,45 @@ function addPins(map, pinList, onOpenDefect) {
   const dataMap = new Map();
   pinList.forEach((pin) => {
     const marker = L.marker([pin.lat, pin.lon], { icon: makeDefectPinIcon(pin, false) }).addTo(map);
-    marker.on('click', () => onOpenDefect?.(pin));
     marker.bindPopup(buildPopup(pin, onOpenDefect), { closeButton: false, offset: [0, -18] });
+    marker.off('click');
+    marker.on('click', () => onOpenDefect?.(pin));
+    let closeTimer = null;
+    let markerHovered = false;
+    let popupHovered = false;
+    const cancelClose = () => {
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+    };
+    const scheduleClose = () => {
+      cancelClose();
+      closeTimer = setTimeout(() => {
+        if (!markerHovered && !popupHovered) marker.closePopup();
+      }, 120);
+    };
+    marker.on('mouseover', () => {
+      markerHovered = true;
+      cancelClose();
+      marker.openPopup();
+    });
+    marker.on('mouseout', () => {
+      markerHovered = false;
+      scheduleClose();
+    });
+    marker.on('popupopen', (event) => {
+      const popupEl = event.popup.getElement();
+      if (!popupEl) return;
+      popupEl.addEventListener('mouseenter', () => {
+        popupHovered = true;
+        cancelClose();
+      });
+      popupEl.addEventListener('mouseleave', () => {
+        popupHovered = false;
+        scheduleClose();
+      });
+    });
     markers.push(marker);
     dataMap.set(marker, pin);
   });

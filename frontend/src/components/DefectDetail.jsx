@@ -3,7 +3,7 @@ import { Icon } from './Icons.jsx';
 import MiniMap from './MiniMap.jsx';
 
 const META_ROWS = [
-  ['Defect type', 'transverse_crack'],
+  ['Defect type', 'Crack'],
   ['Confidence', '0.87'],
   ['Milepost', '24+340'],
   ['Latitude', '44.5638°N'],
@@ -38,7 +38,7 @@ export default function DefectDetail({ active, pins, onBack, onOpenDispatch, onR
             <span className="mono" style={{ fontSize: 12, color: 'var(--text-2)' }}>DEF-2026-04891</span>
             <span className="status-pill new">NEW</span>
           </div>
-          <h1 className="page-title">Transverse crack · railhead</h1>
+          <h1 className="page-title">Crack · railhead</h1>
           <div className="page-sub mono">DETECTED 29 APR 14:23:11.453 UTC · CORVALLIS–ALBANY · MP 24+340 · L1</div>
         </div>
         <div className="page-actions">
@@ -61,7 +61,7 @@ export default function DefectDetail({ active, pins, onBack, onOpenDispatch, onR
               <PhotoSvg />
               <div className="ai-tag bbox" style={{ top: '42%', left: '64%', width: '12%', height: '14%' }} />
               <div className="ai-tag bbox-label" style={{ top: '42%', left: '64%', transform: 'translateY(-100%)' }}>
-                transverse_crack · 0.87
+                Crack · 0.87
               </div>
             </div>
             <div className="photo-thumbs">
@@ -108,7 +108,7 @@ export default function DefectDetail({ active, pins, onBack, onOpenDispatch, onR
               <div className="severity-bar-fill" style={{ width: '90%' }} />
             </div>
             <div className="severity-formula">
-              <div><span>base · transverse_crack</span><strong>6.0</strong></div>
+              <div><span>base · Crack</span><strong>6.0</strong></div>
               <div><span>size_factor · bbox 0.13</span><strong>+2.4</strong></div>
               <div><span>position · railhead L1</span><strong>+0.6</strong></div>
               <div style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 8, marginTop: 4 }}>
@@ -187,3 +187,4 @@ function PhotoSvg() {
     </svg>
   );
 }
+

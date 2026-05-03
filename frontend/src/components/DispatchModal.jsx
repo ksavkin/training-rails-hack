@@ -49,7 +49,7 @@ export default function DispatchModal({ open, onClose }) {
             <div className="work-order-preview">
               <span className="label">ORDER ID</span>WO-2026-04891
               {'\n'}<span className="label">PRIORITY</span>P1 · URGENT
-              {'\n'}<span className="label">DEFECT</span>Transverse crack · severity 9/10
+              {'\n'}<span className="label">DEFECT</span>Crack · severity 9/10
               {'\n'}<span className="label">LOCATION</span>Corvallis–Albany · MP 24+340 · L1
               {'\n'}<span className="label">GPS</span>44.5638°N, 123.2794°W
               {'\n'}<span className="label">CREW</span>Maintenance team Albany
@@ -65,7 +65,7 @@ export default function DispatchModal({ open, onClose }) {
                 {' '}SMS sent to +1 (541) ***-4291
               </div>
               <div className="sms-text">
-                URGENT: Transverse crack at MP 24+340 (Corvallis–Albany line, L1). Severity 9. GPS 44.5638°N, 123.2794°W. Bring rail welder. WO-2026-04891.
+                URGENT: Crack at MP 24+340 (Corvallis–Albany line, L1). Severity 9. GPS 44.5638°N, 123.2794°W. Bring rail welder. WO-2026-04891.
               </div>
             </div>
           )}
@@ -87,3 +87,4 @@ export default function DispatchModal({ open, onClose }) {
     </div>
   );
 }
+

@@ -1,3 +1,5 @@
+import { displayDefectCategory } from '../lib/pinMappers.js';
+
 export const ROUTES = {
   '1': {
     name: 'Corvallis–Albany',
@@ -108,45 +110,48 @@ export const CITIES = [
 /** Local demo data when Supabase env is missing or fetch fails (no images — use DB `image_path` when live). */
 const FALLBACK_PINS_BASE = [
   // Route 1
-  { id: 'DEF-04881', line: '1', sev: 'med',  type: 'Loose fastener',     lat: 44.572, lon: -123.245, mp: '2+150',  conf: 0.72, capturedAt: '2026-04-29 14:06:27' },
-  { id: 'DEF-04882', line: '1', sev: 'low',  type: 'Surface scratch',    lat: 44.581, lon: -123.22, mp: '4+780',  conf: 0.66, capturedAt: '2026-04-29 13:41:10' },
-  { id: 'DEF-04883', line: '1', sev: 'high', type: 'Head check pattern', lat: 44.591, lon: -123.2, mp: '7+020',  conf: 0.83, capturedAt: '2026-04-29 14:12:14' },
-  { id: 'DEF-04884', line: '1', sev: 'med',  type: 'Joint bolt loose',   lat: 44.601, lon: -123.18, mp: '9+200',  conf: 0.81, capturedAt: '2026-04-29 14:06:27' },
-  { id: 'DEF-04885', line: '1', sev: 'low',  type: 'Vegetation',         lat: 44.6079413541001, lon: -123.167338843363, mp: '12+440', conf: 0.68, capturedAt: '2026-04-29 14:13:55' },
-  { id: 'DEF-04886', line: '1', sev: 'high', type: 'Surface wear',       lat: 44.62, lon: -123.135, mp: '15+650', conf: 0.79, capturedAt: '2026-04-29 14:21:48' },
-  { id: 'DEF-04887', line: '1', sev: 'med',  type: 'Tie wear',           lat: 44.628, lon: -123.118, mp: '20+080', conf: 0.74, capturedAt: '2026-04-29 13:58:02' },
+  { id: 'DEF-04881', line: '1', sev: 'med',  type: 'Shelling',     lat: 44.572, lon: -123.245, mp: '2+150',  conf: 0.72, capturedAt: '2026-04-29 14:06:27' },
+  { id: 'DEF-04882', line: '1', sev: 'low',  type: 'Flaking',    lat: 44.581, lon: -123.22, mp: '4+780',  conf: 0.66, capturedAt: '2026-04-29 13:41:10' },
+  { id: 'DEF-04883', line: '1', sev: 'high', type: 'Crack', lat: 44.591, lon: -123.2, mp: '7+020',  conf: 0.83, capturedAt: '2026-04-29 14:12:14' },
+  { id: 'DEF-04884', line: '1', sev: 'med',  type: 'Spalling',   lat: 44.601, lon: -123.18, mp: '9+200',  conf: 0.81, capturedAt: '2026-04-29 14:06:27' },
+  { id: 'DEF-04885', line: '1', sev: 'low',  type: 'Spalling',         lat: 44.6079413541001, lon: -123.167338843363, mp: '12+440', conf: 0.68, capturedAt: '2026-04-29 14:13:55' },
+  { id: 'DEF-04886', line: '1', sev: 'high', type: 'Flaking',       lat: 44.62, lon: -123.135, mp: '15+650', conf: 0.79, capturedAt: '2026-04-29 14:21:48' },
+  { id: 'DEF-04887', line: '1', sev: 'med',  type: 'Shelling',           lat: 44.628, lon: -123.118, mp: '20+080', conf: 0.74, capturedAt: '2026-04-29 13:58:02' },
   // Route 2
-  { id: 'DEF-04901', line: '2', sev: 'low',      type: 'Surface scratch',    lat: 45.481133049331, lon: -122.70096568556, mp: '5+200',   conf: 0.62, capturedAt: '2026-04-29 12:22:54' },
-  { id: 'DEF-04902', line: '2', sev: 'med',      type: 'Loose fastener',     lat: 45.3641692562368, lon: -122.77610371523, mp: '12+800',  conf: 0.74, capturedAt: '2026-04-29 12:35:11' },
-  { id: 'DEF-04903', line: '2', sev: 'med',      type: 'Tie wear',           lat: 45.2498456668544, lon: -122.846386058153, mp: '24+100',  conf: 0.71, capturedAt: '2026-04-29 12:48:29' },
-  { id: 'DEF-04904', line: '2', sev: 'high',     type: 'Head check cluster', lat: 45.1347882259873, lon: -122.917737304252, mp: '38+550',  conf: 0.85, capturedAt: '2026-04-29 13:02:17' },
-  { id: 'DEF-04905', line: '2', sev: 'med',      type: 'Joint bolt loose',   lat: 44.9433104308447, lon: -123.034526780817, mp: '52+200',  conf: 0.78, capturedAt: '2026-04-29 13:16:02' },
-  { id: 'DEF-04906', line: '2', sev: 'low',      type: 'Ballast fouling',    lat: 44.8366873716684, lon: -123.060326931778, mp: '63+780',  conf: 0.65, capturedAt: '2026-04-29 13:29:14' },
-  { id: 'DEF-04907', line: '2', sev: 'med',      type: 'Surface wear',       lat: 44.7559685534488, lon: -123.078142644209, mp: '74+910',  conf: 0.73, capturedAt: '2026-04-29 13:44:20' },
-  { id: 'DEF-04908', line: '2', sev: 'resolved', type: 'Spike pulled',       lat: 44.6768604516378, lon: -123.096817275967, mp: '85+440',  conf: 0.69, capturedAt: '2026-04-29 13:58:36' },
-  { id: 'DEF-04909', line: '2', sev: 'high',     type: 'Defective fishplate',lat: 44.5042773377162, lon: -123.251808229303, mp: '105+180', conf: 0.84, capturedAt: '2026-04-29 14:03:48' },
-  { id: 'DEF-04910', line: '2', sev: 'med',      type: 'Gauge widening',     lat: 44.3246255593085, lon: -123.220953825424, mp: '120+360', conf: 0.71, capturedAt: '2026-04-29 14:10:53' },
-  { id: 'DEF-04911', line: '2', sev: 'low',      type: 'Vegetation',         lat: 44.1833172021144, lon: -123.177356659748, mp: '140+200', conf: 0.66, capturedAt: '2026-04-29 14:13:55' },
-  { id: 'DEF-04912', line: '2', sev: 'high',     type: 'Corrugation',        lat: 44.0524927965281, lon: -123.08689970304, mp: '155+880', conf: 0.79, capturedAt: '2026-04-29 14:18:31' },
+  { id: 'DEF-04901', line: '2', sev: 'low',      type: 'Flaking',    lat: 45.481133049331, lon: -122.70096568556, mp: '5+200',   conf: 0.62, capturedAt: '2026-04-29 12:22:54' },
+  { id: 'DEF-04902', line: '2', sev: 'med',      type: 'Shelling',     lat: 45.3641692562368, lon: -122.77610371523, mp: '12+800',  conf: 0.74, capturedAt: '2026-04-29 12:35:11' },
+  { id: 'DEF-04903', line: '2', sev: 'med',      type: 'Shelling',           lat: 45.2498456668544, lon: -122.846386058153, mp: '24+100',  conf: 0.71, capturedAt: '2026-04-29 12:48:29' },
+  { id: 'DEF-04904', line: '2', sev: 'high',     type: 'Crack', lat: 45.1347882259873, lon: -122.917737304252, mp: '38+550',  conf: 0.85, capturedAt: '2026-04-29 13:02:17' },
+  { id: 'DEF-04905', line: '2', sev: 'med',      type: 'Spalling',   lat: 44.9433104308447, lon: -123.034526780817, mp: '52+200',  conf: 0.78, capturedAt: '2026-04-29 13:16:02' },
+  { id: 'DEF-04906', line: '2', sev: 'low',      type: 'Squats',    lat: 44.8366873716684, lon: -123.060326931778, mp: '63+780',  conf: 0.65, capturedAt: '2026-04-29 13:29:14' },
+  { id: 'DEF-04907', line: '2', sev: 'med',      type: 'Flaking',       lat: 44.7559685534488, lon: -123.078142644209, mp: '74+910',  conf: 0.73, capturedAt: '2026-04-29 13:44:20' },
+  { id: 'DEF-04908', line: '2', sev: 'resolved', type: 'Spalling',       lat: 44.6768604516378, lon: -123.096817275967, mp: '85+440',  conf: 0.69, capturedAt: '2026-04-29 13:58:36' },
+  { id: 'DEF-04909', line: '2', sev: 'high',     type: 'Shelling',lat: 44.5042773377162, lon: -123.251808229303, mp: '105+180', conf: 0.84, capturedAt: '2026-04-29 14:03:48' },
+  { id: 'DEF-04910', line: '2', sev: 'med',      type: 'Spalling',     lat: 44.3246255593085, lon: -123.220953825424, mp: '120+360', conf: 0.71, capturedAt: '2026-04-29 14:10:53' },
+  { id: 'DEF-04911', line: '2', sev: 'low',      type: 'Spalling',         lat: 44.1833172021144, lon: -123.177356659748, mp: '140+200', conf: 0.66, capturedAt: '2026-04-29 14:13:55' },
+  { id: 'DEF-04912', line: '2', sev: 'high',     type: 'Squats',        lat: 44.0524927965281, lon: -123.08689970304, mp: '155+880', conf: 0.79, capturedAt: '2026-04-29 14:18:31' },
   // Route 3
-  { id: 'DEF-04921', line: '3', sev: 'med',  type: 'Loose fastener',     lat: 44.8593784195786, lon: -122.893915605473, mp: '14+580',  conf: 0.73, capturedAt: '2026-04-29 12:10:42' },
-  { id: 'DEF-04922', line: '3', sev: 'high', type: 'Head check pattern', lat: 44.7708260247919, lon: -122.491849034632, mp: '32+040',  conf: 0.83, capturedAt: '2026-04-29 12:24:08' },
-  { id: 'DEF-04923', line: '3', sev: 'med',  type: 'Tie wear',           lat: 44.752161132088, lon: -122.301430396917, mp: '48+750',  conf: 0.71, capturedAt: '2026-04-29 12:39:54' },
-  { id: 'DEF-04925', line: '3', sev: 'med',  type: 'Surface wear',       lat: 44.5312621334757, lon: -121.952726063615, mp: '85+300',  conf: 0.74, capturedAt: '2026-04-29 12:59:16' },
-  { id: 'DEF-04926', line: '3', sev: 'low',  type: 'Vegetation',         lat: 44.3889625221229, lon: -121.775755894048, mp: '102+440', conf: 0.65, capturedAt: '2026-04-29 13:11:22' },
-  { id: 'DEF-04927', line: '3', sev: 'high', type: 'Defective fishplate',lat: 44.3515037781356, lon: -121.68805145067, mp: '125+880', conf: 0.84, capturedAt: '2026-04-29 13:25:03' },
+  { id: 'DEF-04921', line: '3', sev: 'med',  type: 'Shelling',     lat: 44.8593784195786, lon: -122.893915605473, mp: '14+580',  conf: 0.73, capturedAt: '2026-04-29 12:10:42' },
+  { id: 'DEF-04922', line: '3', sev: 'high', type: 'Crack', lat: 44.7708260247919, lon: -122.491849034632, mp: '32+040',  conf: 0.83, capturedAt: '2026-04-29 12:24:08' },
+  { id: 'DEF-04923', line: '3', sev: 'med',  type: 'Shelling',           lat: 44.752161132088, lon: -122.301430396917, mp: '48+750',  conf: 0.71, capturedAt: '2026-04-29 12:39:54' },
+  { id: 'DEF-04925', line: '3', sev: 'med',  type: 'Flaking',       lat: 44.5312621334757, lon: -121.952726063615, mp: '85+300',  conf: 0.74, capturedAt: '2026-04-29 12:59:16' },
+  { id: 'DEF-04926', line: '3', sev: 'low',  type: 'Spalling',         lat: 44.3889625221229, lon: -121.775755894048, mp: '102+440', conf: 0.65, capturedAt: '2026-04-29 13:11:22' },
+  { id: 'DEF-04927', line: '3', sev: 'high', type: 'Shelling',lat: 44.3515037781356, lon: -121.68805145067, mp: '125+880', conf: 0.84, capturedAt: '2026-04-29 13:25:03' },
   // Route 4
-  { id: 'DEF-04931', line: '4', sev: 'low',  type: 'Surface scratch', lat: 47.560, lon: -122.342, mp: '4+200',  conf: 0.64, capturedAt: '2026-04-29 11:33:09' },
-  { id: 'DEF-04932', line: '4', sev: 'med',  type: 'Loose fastener',  lat: 47.480, lon: -122.355, mp: '12+700', conf: 0.74, capturedAt: '2026-04-29 11:47:26' },
-  { id: 'DEF-04933', line: '4', sev: 'high', type: 'Head check',      lat: 47.380, lon: -122.380, mp: '24+880', conf: 0.81, capturedAt: '2026-04-29 12:03:15' },
-  { id: 'DEF-04934', line: '4', sev: 'med',  type: 'Tie wear',        lat: 47.290, lon: -122.420, mp: '38+040', conf: 0.72, capturedAt: '2026-04-29 12:15:44' }
+  { id: 'DEF-04931', line: '4', sev: 'low',  type: 'Flaking', lat: 47.560, lon: -122.342, mp: '4+200',  conf: 0.64, capturedAt: '2026-04-29 11:33:09' },
+  { id: 'DEF-04932', line: '4', sev: 'med',  type: 'Shelling',  lat: 47.480, lon: -122.355, mp: '12+700', conf: 0.74, capturedAt: '2026-04-29 11:47:26' },
+  { id: 'DEF-04933', line: '4', sev: 'high', type: 'Crack',      lat: 47.380, lon: -122.380, mp: '24+880', conf: 0.81, capturedAt: '2026-04-29 12:03:15' },
+  { id: 'DEF-04934', line: '4', sev: 'med',  type: 'Shelling',        lat: 47.290, lon: -122.420, mp: '38+040', conf: 0.72, capturedAt: '2026-04-29 12:15:44' }
 ];
 
-export const FALLBACK_PINS = FALLBACK_PINS_BASE;
+export const FALLBACK_PINS = FALLBACK_PINS_BASE.map((pin) => ({
+  ...pin,
+  type: displayDefectCategory(pin.type, pin.id)
+}));
 
 export const FOCUS_PIN = {
   id: 'DEF-04891', line: '1', sev: 'crit',
-  type: 'Transverse crack', lat: 44.6268666785878, lon: -123.126360560348, mp: '24+340', conf: 0.87,
+  type: 'Crack', lat: 44.6268666785878, lon: -123.126360560348, mp: '24+340', conf: 0.87,
   capturedAt: '2026-04-29 14:23:11'
 };
 
@@ -188,3 +193,4 @@ export const TILE_PROVIDERS = [
     options: { attribution: '© OSM', maxZoom: 19 }
   }
 ];
+

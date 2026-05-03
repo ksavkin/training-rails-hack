@@ -1,5 +1,25 @@
 import { resolveDefectImageUrl } from './defectImageUrl.js';
 
+export const DEFECT_CATEGORIES = ['Squats', 'Flaking', 'Crack', 'Spalling', 'Shelling'];
+
+export function displayDefectCategory(value, seed = '') {
+  const normalized = value != null ? String(value).trim().toLowerCase() : '';
+  const direct = DEFECT_CATEGORIES.find((category) => category.toLowerCase() === normalized);
+  if (direct) return direct;
+  if (normalized.includes('squat')) return 'Squats';
+  if (normalized.includes('flak')) return 'Flaking';
+  if (normalized.includes('crack') || normalized.includes('fracture')) return 'Crack';
+  if (normalized.includes('spall')) return 'Spalling';
+  if (normalized.includes('shell')) return 'Shelling';
+
+  const text = `${seed || value || ''}`;
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return DEFECT_CATEGORIES[hash % DEFECT_CATEGORIES.length];
+}
+
 function formatCapturedAt(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -80,7 +100,7 @@ export function rowToPin(row) {
     line: row.line_id != null ? String(row.line_id) : '',
     sev: resolveSevForRow(row),
     severityNum: Number.isFinite(severityNum) ? severityNum : null,
-    type: row.defect_type != null ? String(row.defect_type) : '',
+    type: displayDefectCategory(row.defect_type, id),
     lat: Number(row.lat),
     lon: Number(row.lon),
     mp: row.milepost != null ? String(row.milepost) : '',

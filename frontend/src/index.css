@@ -1387,6 +1387,16 @@
     color: var(--text-1);
     word-break: break-word;
   }
+  .pin-popup-severity-crit,
+  .pin-popup-severity-high {
+    color: var(--crit);
+  }
+  .pin-popup-severity-med {
+    color: var(--high);
+  }
+  .pin-popup-severity-low {
+    color: var(--warn);
+  }
   .pin-popup-meta {
     font-family: var(--mono); font-size: 11px;
     color: var(--text-2); line-height: 1.6;
