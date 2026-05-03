@@ -78,12 +78,19 @@ def build_dispatch_message(payload: dict) -> str:
     severity = payload["severity"]
     timestamp = payload["timestamp"]
     map_url = f"https://maps.google.com/?q={lat},{lon}"
+    # Frontend builds the worker deep-link from window.location.origin and
+    # passes it in. Backend has no env for the public host so this is the
+    # only path; missing -> SMS just omits the line.
+    worker_url = payload.get("worker_url")
 
-    return (
-        "URGENT: Severe track defect detected. Dispatch maintenance immediately.\n"
-        f"Pin: {pin_id}\n"
-        f"Severity: {severity}\n"
-        f"Location: {lat}, {lon}\n"
-        f"Time: {timestamp}\n"
-        f"Map: {map_url}"
-    )
+    lines = [
+        "URGENT: Severe track defect detected. Dispatch maintenance immediately.",
+        f"Pin: {pin_id}",
+        f"Severity: {severity}",
+        f"Location: {lat}, {lon}",
+        f"Time: {timestamp}",
+        f"Map: {map_url}",
+    ]
+    if worker_url:
+        lines.append(f"Open: {worker_url}")
+    return "\n".join(lines)

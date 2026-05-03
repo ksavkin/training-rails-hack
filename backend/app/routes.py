@@ -5,6 +5,7 @@ from app.config import APP_NAME
 from app.detections import detect_defect
 from app.dispatch import dispatch_operator
 from app.pins import acknowledge_pin, edit_pin, reopen_pin, resolve_pin
+from app.worker import append_dispatch_log, get_pin_for_worker
 
 router = APIRouter()
 
@@ -65,3 +66,18 @@ async def edit(pin_id: str, payload: dict | None = None):
         pin_id,
         defect_type=str(defect_type) if defect_type is not None else None,
         severity=severity,
+    )
+
+
+# Worker endpoints — public (no API_TOKEN). Auth model: open URL keyed by
+# pin_id, delivered via SMS to the dispatched crew. See app/worker.py.
+@router.get("/worker/pins/{pin_id}")
+async def worker_get_pin(pin_id: str):
+    return get_pin_for_worker(pin_id)
+
+
+@router.post("/worker/pins/{pin_id}/log")
+async def worker_log(pin_id: str, payload: dict | None = None):
+    if payload is None:
+        raise HTTPException(status_code=400, detail="Missing JSON request body")
+    return append_dispatch_log(pin_id, payload)
