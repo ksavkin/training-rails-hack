@@ -214,7 +214,7 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url,
         resp = requests.post(
             "{}/detect".format(fastapi_url),
             json={"image_path": image_path},
-            timeout=10,
+            timeout=30,
         )
         if resp.status_code not in (200, 201):
             print("[detect] /detect returned {}: {}".format(
