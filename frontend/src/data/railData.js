@@ -132,7 +132,6 @@ const FALLBACK_PINS_BASE = [
   { id: 'DEF-04921', line: '3', sev: 'med',  type: 'Loose fastener',     lat: 44.8593784195786, lon: -122.893915605473, mp: '14+580',  conf: 0.73, capturedAt: '2026-04-29 12:10:42' },
   { id: 'DEF-04922', line: '3', sev: 'high', type: 'Head check pattern', lat: 44.7708260247919, lon: -122.491849034632, mp: '32+040',  conf: 0.83, capturedAt: '2026-04-29 12:24:08' },
   { id: 'DEF-04923', line: '3', sev: 'med',  type: 'Tie wear',           lat: 44.752161132088, lon: -122.301430396917, mp: '48+750',  conf: 0.71, capturedAt: '2026-04-29 12:39:54' },
-  { id: 'DEF-04924', line: '3', sev: 'crit', type: 'Lateral misalign',   lat: 44.7, lon: -121.9, mp: '67+120',  conf: 0.91, capturedAt: '2026-04-29 14:19:02' },
   { id: 'DEF-04925', line: '3', sev: 'med',  type: 'Surface wear',       lat: 44.5312621334757, lon: -121.952726063615, mp: '85+300',  conf: 0.74, capturedAt: '2026-04-29 12:59:16' },
   { id: 'DEF-04926', line: '3', sev: 'low',  type: 'Vegetation',         lat: 44.3889625221229, lon: -121.775755894048, mp: '102+440', conf: 0.65, capturedAt: '2026-04-29 13:11:22' },
   { id: 'DEF-04927', line: '3', sev: 'high', type: 'Defective fishplate',lat: 44.3515037781356, lon: -121.68805145067, mp: '125+880', conf: 0.84, capturedAt: '2026-04-29 13:25:03' },
