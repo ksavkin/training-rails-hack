@@ -11,17 +11,14 @@ from app.routes import router
 
 APP_NAME = os.getenv("APP_NAME", "training-rails")
 
-DEFAULT_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
-allow_origins = [
-    o.strip()
-    for o in os.getenv("CORS_ORIGINS", DEFAULT_ORIGINS).split(",")
-    if o.strip()
-]
-
 app = FastAPI(title=APP_NAME)
+# Demo deployment: open CORS. Auth is enforced server-side via API_TOKEN
+# Bearer header on mutation endpoints, so opening up cross-origin reads
+# and the worker's public endpoints is fine for the hackathon. Lock down
+# post-demo if needed.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
