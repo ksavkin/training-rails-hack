@@ -22,7 +22,9 @@ export default function VideoPopup({ open, onClose }) {
           <button className="icon-btn" onClick={onClose}><Icon name="i-x" /></button>
         </div>
         <div className="video-popup-stage">
-          {camera.streamKind === 'mjpeg' ? (
+          {camera.streamKind === 'unavailable' ? (
+            <div className="stream-unavailable">Video stream unavailable</div>
+          ) : camera.streamKind === 'mjpeg' ? (
             <img className="feed-live-img" src={camera.streamUrl} alt={`${camera.label} live stream`} />
           ) : (
             <video className="feed-live-img" src={camera.streamUrl} controls autoPlay muted playsInline />
@@ -33,7 +35,7 @@ export default function VideoPopup({ open, onClose }) {
             <div className="feed-hud-stats">
               <div>JET-TX2-001 · CSI-0</div>
               <div>Live forward inspection camera</div>
-              <div>{camera.streamKind === 'mjpeg' ? 'MJPEG stream' : 'Placeholder stream'}</div>
+              <div>{camera.streamKind === 'mjpeg' ? 'MJPEG stream' : camera.source}</div>
             </div>
           </div>
         </div>

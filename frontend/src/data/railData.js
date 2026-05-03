@@ -154,19 +154,19 @@ const JETSON_STREAM_URL = import.meta.env.VITE_JETSON_STREAM_URL || '';
 
 export const CAMERAS = [
   {
-    id: 'CAM-T422',
-    label: 'T-422 Forward Cam',
-    streamUrl: JETSON_STREAM_URL || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    streamKind: JETSON_STREAM_URL ? 'mjpeg' : 'video',
-    source: JETSON_STREAM_URL ? 'Jetson live stream' : 'Placeholder stream - replace with production URL',
+    id: 'JET-0',
+    label: 'JETSON-0 Inspection Cam',
+    streamUrl: JETSON_STREAM_URL,
+    streamKind: JETSON_STREAM_URL ? 'mjpeg' : 'unavailable',
+    source: JETSON_STREAM_URL ? 'Jetson live stream' : 'Stream unavailable',
     line: '1'
   },
   {
-    id: 'CAM-T388',
-    label: 'T-388 Inspection Cam',
-    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    streamKind: 'video',
-    source: 'Placeholder stream · replace with production URL',
+    id: 'JET-1',
+    label: 'JETSON_1 Inspection Cam',
+    streamUrl: '',
+    streamKind: 'unavailable',
+    source: 'Stream unavailable',
     line: '3'
   }
 ];
