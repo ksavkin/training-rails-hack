@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.config import APP_NAME
 from app.detections import detect_defect
+from app.dispatch import dispatch_operator
 
 router = APIRouter()
 
@@ -24,9 +25,9 @@ async def detect(defect: dict | None = None):
     return detect_defect(defect)
 
 
-# Add more routes below.
-# Example:
-#
-# @router.post("/clients")
-# async def create_client(client: dict):
-#     return client
+@router.post("/dispatch")
+async def dispatch(payload: dict | None = None):
+    if payload is None:
+        raise HTTPException(status_code=400, detail="Missing JSON request body")
+
+    return dispatch_operator(payload)
