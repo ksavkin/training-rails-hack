@@ -1413,3 +1413,8 @@
     object-fit: cover;
     background: #000;
   }
+  /* Hide native volume / mute controls (keep play, timeline, fullscreen where offered) */
+  .map-focus-video video::-webkit-media-controls-volume-slider,
+  .map-focus-video video::-webkit-media-controls-mute-button {
+    display: none !important;
+  }

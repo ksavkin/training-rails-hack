@@ -6,7 +6,6 @@ import Topbar from './components/Topbar.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import DefectDetail from './components/DefectDetail.jsx';
 import TrackView from './components/TrackView.jsx';
-import LiveFeed from './components/LiveFeed.jsx';
 import VideoPopup from './components/VideoPopup.jsx';
 import DispatchModal from './components/DispatchModal.jsx';
 import CriticalAlert, { playBeep } from './components/CriticalAlert.jsx';
@@ -138,10 +137,6 @@ export default function App() {
             active={page === 'track'}
             onOpenDetail={openDetail}
             onOpenCamera={openMapCamera}
-          />
-          <LiveFeed
-            active={page === 'feed'}
-            onOpenDetail={openDetail}
           />
         </main>
       </div>

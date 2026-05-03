@@ -34,11 +34,10 @@ export default function Sidebar({ page, setPage, line, setLine }) {
       </div>
 
       <nav className="nav">
-        <div className="nav-section">Operations</div>
-        {navItem('dashboard', 'i-dash', 'Dashboard')}
+        {/* <div className="nav-section">Operations</div> */}
+        {/* {navItem('dashboard', 'i-dash', 'Dashboard')}
         {navItem('track', 'i-track', 'Track view')}
-        {navItem('defect', 'i-alert', 'Defect detail', <span className="badge crit">!</span>)}
-        {navItem('feed', 'i-feed', 'Live feed', <span className="badge">●</span>)}
+        {navItem('defect', 'i-alert', 'Defect detail', <span className="badge crit">!</span>)} */}
 
         <div className="nav-section" style={{ marginTop: 14 }}>Lines</div>
         <div className="lines-list">
