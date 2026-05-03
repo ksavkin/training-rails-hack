@@ -1,6 +1,6 @@
 # training-rails — Rail Defect Detection
 
-YOLOv8n-seg model that segments rail track and surface defects.
+YOLOv8s-seg model that segments rail track and surface defects.
 
 ## Repo
 

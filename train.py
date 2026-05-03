@@ -1,4 +1,4 @@
-"""Train YOLOv8n-seg for rail defect detection.
+"""Train YOLOv8s-seg for rail defect detection.
 
 Usage:
     python train.py path/to/data.yaml
@@ -13,12 +13,12 @@ def main() -> None:
         sys.exit(1)
     data = sys.argv[1]
 
-    model = YOLO("yolov8n-seg.pt")
+    model = YOLO("yolov8s-seg.pt")
     model.train(
         data=data,
         epochs=100,
         imgsz=1280,
-        batch=8,
+        batch=4,
         multi_scale=True,
     )
 
