@@ -155,7 +155,7 @@ const JETSON_STREAM_URL = import.meta.env.VITE_JETSON_STREAM_URL || '';
 export const CAMERAS = [
   {
     id: 'JET-0',
-    label: 'JETSON-0 Inspection Cam',
+    label: 'JET-0 Inspection Cam',
     streamUrl: JETSON_STREAM_URL,
     streamKind: JETSON_STREAM_URL ? 'mjpeg' : 'unavailable',
     source: JETSON_STREAM_URL ? 'Jetson live stream' : 'Stream unavailable',
@@ -163,7 +163,7 @@ export const CAMERAS = [
   },
   {
     id: 'JET-1',
-    label: 'JETSON_1 Inspection Cam',
+    label: 'JET-1 Inspection Cam',
     streamUrl: '',
     streamKind: 'unavailable',
     source: 'Stream unavailable',

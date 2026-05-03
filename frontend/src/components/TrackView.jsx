@@ -3,8 +3,8 @@ import { Icon } from './Icons.jsx';
 import { CAMERAS } from '../data/railData.js';
 
 const TRACK_CAMERA_ICONS = [
-  { cam: CAMERAS[0], classSuffix: '422', shortLabel: 'T-422', durationSec: 30, delaySec: 0 },
-  { cam: CAMERAS[1], classSuffix: '388', shortLabel: 'T-388', durationSec: 100, delaySec: -47 }
+  { cam: CAMERAS[0], classSuffix: '422', shortLabel: 'JET-0', durationSec: 30, delaySec: 0 },
+  { cam: CAMERAS[1], classSuffix: '388', shortLabel: 'JET-1', durationSec: 100, delaySec: -47 }
 ];
 
 const TICKS = [
@@ -66,7 +66,7 @@ export default function TrackView({ active, onOpenDetail, onOpenCamera }) {
       <div className="page-head">
         <div>
           <h1 className="page-title">Track view</h1>
-          <div className="page-sub mono">CORVALLIS–ALBANY · 30 KM · LAST PASS T-422 · 14:23 UTC</div>
+          <div className="page-sub mono">CORVALLIS–ALBANY · 30 KM · LAST PASS JET-0 · 14:23 UTC</div>
         </div>
         <div className="page-actions">
           <select className="btn" style={{ padding: '0 12px' }}>

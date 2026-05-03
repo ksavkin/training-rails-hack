@@ -314,8 +314,8 @@ const RailPinMap = forwardRef(function RailPinMap(
     heatmapLayerRef.current = heatLayer;
 
     // --- Live camera markers (rAF path along ROUTES; unrelated to heatmap layer lifetime). ---
-    const train422 = L.marker(ROUTES['1'].coords[0], { icon: makeCameraIcon('T-422', ''), zIndexOffset: 800 }).addTo(map);
-    const train388 = L.marker(ROUTES['3'].coords[1], { icon: makeCameraIcon('T-388', 't-388'), zIndexOffset: 800 }).addTo(map);
+    const train422 = L.marker(ROUTES['1'].coords[0], { icon: makeCameraIcon('JET-0', ''), zIndexOffset: 800 }).addTo(map);
+    const train388 = L.marker(ROUTES['3'].coords[1], { icon: makeCameraIcon('JET-1', 't-388'), zIndexOffset: 800 }).addTo(map);
     train422.on('click', () => onOpenCameraRef.current?.(CAMERAS[0]));
     train388.on('click', () => onOpenCameraRef.current?.(CAMERAS[1]));
     train422Ref.current = train422;

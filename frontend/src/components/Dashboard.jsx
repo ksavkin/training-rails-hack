@@ -64,7 +64,7 @@ export default function Dashboard({
             <div className="map-controls">
               <button title="Zoom in" onClick={() => mapRef.current?.zoomIn()}><Icon name="i-plus" /></button>
               <button title="Zoom out" onClick={() => mapRef.current?.zoomOut()}><Icon name="i-minus" /></button>
-              <button title="Center on T-422" onClick={() => mapRef.current?.centerOnTrain()}><Icon name="i-target" /></button>
+              <button title="Center on JET-0" onClick={() => mapRef.current?.centerOnTrain()}><Icon name="i-target" /></button>
               <button
                 type="button"
                 title={heatmapOn ? 'Hide defect density heatmap' : 'Show defect density heatmap'}
