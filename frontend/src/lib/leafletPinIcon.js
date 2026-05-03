@@ -24,9 +24,9 @@ export function makeDefectPinIcon(pin, options = {}) {
   const sev = pin?.sev || 'med';
   const url = pin?.imageUrl;
   const useImg = Boolean(url) && !isPlaceholderMapImageUrl(url);
-  const headInner = useImg
+  const thumbHtml = useImg
     ? `<img class="leaflet-pin-thumb" src="${escapeAttr(url)}" alt="" loading="lazy" decoding="async" />`
-    : '<span class="leaflet-pin-head-fill"></span>';
+    : '';
 
   const cls =
     'leaflet-pin ' +
@@ -35,27 +35,31 @@ export function makeDefectPinIcon(pin, options = {}) {
     (useImg ? ' has-thumb' : '') +
     (compact ? ' leaflet-pin--compact' : '');
 
+  // Solid teardrop (Material-style map pin); optional circular thumb in the bulb.
+  const pinPath =
+    'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z';
+
   const html =
     `<div class="${cls}">` +
-    '<span class="leaflet-pin-head">' +
-    headInner +
-    '</span>' +
-    '<span class="leaflet-pin-tip"></span>' +
+    '<svg class="leaflet-pin-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    `<path class="leaflet-pin-drop" fill="currentColor" d="${pinPath}"/>` +
+    '</svg>' +
+    thumbHtml +
     '</div>';
 
   if (compact) {
     return L.divIcon({
       className: 'pin-icon-wrap pin-icon-wrap--compact',
       html,
-      iconSize: [16, 24],
-      iconAnchor: [8, 22]
+      iconSize: [18, 22],
+      iconAnchor: [9, 20]
     });
   }
 
   return L.divIcon({
     className: 'pin-icon-wrap',
     html,
-    iconSize: [22, 30],
-    iconAnchor: [11, 29]
+    iconSize: [26, 32],
+    iconAnchor: [13, 29]
   });
 }

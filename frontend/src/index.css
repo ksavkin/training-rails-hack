@@ -1158,76 +1158,69 @@
   /* Built-in zoom controls (we hide them and use our custom) */
   .leaflet-control-zoom { display: none !important; }
 
-  /* Pin marker (Leaflet div-icon) */
+  /* Pin marker (Leaflet div-icon) — teardrop map pin */
   .leaflet-pin {
-    width: 22px;
-    height: 30px;
+    width: 26px;
+    height: 32px;
     position: relative;
     cursor: pointer;
     transition: transform 0.15s;
+    color: var(--warn);
   }
-  .leaflet-pin:hover { transform: scale(1.18); z-index: 1000; }
-  .leaflet-pin-head {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 2px solid #0a0d10;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
-    overflow: hidden;
-    box-sizing: border-box;
-  }
-  .leaflet-pin-head-fill {
+  .leaflet-pin:hover { transform: scale(1.12); z-index: 1000; }
+  .leaflet-pin-svg {
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: 999px;
+    position: relative;
+    z-index: 0;
+    overflow: visible;
+    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+  }
+  .leaflet-pin-drop {
+    stroke: #0a0d10;
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
   }
   .leaflet-pin-thumb {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 999px;
-  }
-  .leaflet-pin.has-thumb .leaflet-pin-head {
-    background: #14191f;
-  }
-  .leaflet-pin-tip {
     position: absolute;
     left: 50%;
-    bottom: 1px;
-    width: 10px;
-    height: 10px;
-    transform: translateX(-50%) rotate(45deg);
-    transform-origin: center;
-    border-radius: 2px;
+    top: 14%;
+    width: 38%;
+    height: 29%;
+    transform: translateX(-50%);
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1.5px solid #0a0d10;
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 1;
   }
-  .leaflet-pin.crit .leaflet-pin-head-fill,
-  .leaflet-pin.crit .leaflet-pin-tip { background: var(--crit); }
-  .leaflet-pin.high .leaflet-pin-head-fill,
-  .leaflet-pin.high .leaflet-pin-tip { background: var(--high); }
-  .leaflet-pin.med .leaflet-pin-head-fill,
-  .leaflet-pin.med .leaflet-pin-tip { background: var(--warn); }
-  .leaflet-pin.low .leaflet-pin-head-fill,
-  .leaflet-pin.low .leaflet-pin-tip { background: var(--info); }
-  .leaflet-pin.resolved .leaflet-pin-head-fill,
-  .leaflet-pin.resolved .leaflet-pin-tip { background: var(--ok); opacity: 0.65; }
+  .leaflet-pin.crit { color: var(--crit); }
+  .leaflet-pin.high { color: var(--high); }
+  .leaflet-pin.med { color: var(--warn); }
+  .leaflet-pin.low { color: var(--info); }
+  .leaflet-pin.resolved { color: var(--ok); opacity: 0.72; }
 
-  .leaflet-pin.crit:not(.has-thumb) .leaflet-pin-head::before {
+  .leaflet-pin.crit:not(.has-thumb)::before {
     content: '';
     position: absolute;
-    inset: -5px;
+    left: 50%;
+    top: 34%;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
     background: var(--crit);
-    opacity: 0.4;
+    opacity: 0.45;
     animation: leaflet-pin-pulse 1.4s ease-out infinite;
     z-index: -1;
   }
   @keyframes leaflet-pin-pulse {
-    0% { transform: scale(0.5); opacity: 0.6; }
-    100% { transform: scale(2.4); opacity: 0; }
+    0% { transform: translate(-50%, -50%) scale(0.45); opacity: 0.65; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
   }
 
   /* Just-dropped pin - shows a bigger anim once */
@@ -1242,17 +1235,14 @@
 
   /* Defect page mini-map: smaller pins */
   #defect-mini-map-leaflet .leaflet-pin--compact {
-    width: 16px;
-    height: 24px;
+    width: 18px;
+    height: 22px;
   }
-  #defect-mini-map-leaflet .leaflet-pin--compact .leaflet-pin-head {
-    width: 16px;
-    height: 16px;
-  }
-  #defect-mini-map-leaflet .leaflet-pin--compact .leaflet-pin-tip {
-    width: 8px;
-    height: 8px;
-    bottom: 0;
+  #defect-mini-map-leaflet .leaflet-pin--compact .leaflet-pin-thumb {
+    top: 12%;
+    width: 40%;
+    height: 30%;
+    border-width: 1px;
   }
 
   /* Train marker */
