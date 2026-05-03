@@ -236,7 +236,7 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url,
         "lat":         gps.get("lat", 0.0),
         "lon":         gps.get("lon", 0.0),
         "speed_mps":   gps.get("speed", None),
-        "image_path":  public_url,
+        "image_path":  image_path,
         "severity":    severity,
         "captured_at": captured_at,
     }

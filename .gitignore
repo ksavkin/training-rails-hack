@@ -19,3 +19,10 @@ runs/
 # Base weights auto-download via ultralytics
 yolo*.pt
 !model/best.pt
+.supabase-mvp1-dbpass
+.supabase-mvp1-creds
+
+# Local agent/working notes (not for the team repo)
+docs/
+AGENTS.md
+CLAUDE.md
