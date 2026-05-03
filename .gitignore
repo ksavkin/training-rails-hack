@@ -26,3 +26,4 @@ yolo*.pt
 docs/
 AGENTS.md
 CLAUDE.md
+.gstack/
