@@ -14,9 +14,13 @@ def detect_defect(defect: dict) -> dict:
         raise HTTPException(status_code=400, detail="Missing required field: image_path")
 
     resolved_path = resolve_image_path(image_path)
-    severity = parse_severity(request_severity(resolved_path))
+    gemini_text = request_severity(resolved_path)
+    severity = parse_severity(gemini_text)
 
-    return detection_response(severity)
+    response = detection_response(severity)
+    response["gemini_raw"] = gemini_text
+    response["severity_source"] = "gemini"
+    return response
 
 
 def resolve_image_path(image_path: str) -> Path:

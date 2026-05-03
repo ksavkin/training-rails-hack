@@ -12,11 +12,22 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:ge
 
 SEVERITY_PROMPT = (
     "You are inspecting train track defect imagery. "
-    "Estimate the severity of the visible rail or track defect on a 1.0 to 10.0 scale, "
-    "where 1.0 is cosmetic or minor and 10.0 is critical or needs immediate repair. "
-    "Defect examples include squats, transverse cracks, longitudinal cracks, flaking, "
-    "spalling, shelling, missing fasteners, and broken rail. "
-    "Return only valid JSON in this exact shape: {\"severity\": 7.5}"
+    "Estimate the severity of the visible rail or track defect on a conservative 1.0 to 10.0 scale. "
+    "Use 1.0 to 1.9 for cosmetic marks, small surface scratches, light discoloration, tiny edge nicks, "
+    "or normal wear with no visible structural threat. "
+    "Use 2.0 to 3.9 for minor defects that should be logged or monitored, such as shallow flaking, "
+    "small chips, light spalling, or early squats without clear depth. "
+    "Use 4.0 to 5.9 for moderate defects needing maintenance planning, such as visible cracks, repeated "
+    "flaking, deeper spalling, or localized material loss. "
+    "Use 6.0 to 7.9 for severe defects that need urgent inspection or repair, such as large cracks, "
+    "deep squats, significant rail head damage, loose/missing fasteners, or damage affecting support. "
+    "Use 8.0 to 8.9 only when the image shows very severe damage with credible near-term operational risk. "
+    "Use 9.0 to 10.0 only when derailment or immediate track failure appears possible, such as broken rail, "
+    "rail separation, major fracture, severe geometry failure, or missing critical support. "
+    "If the defect looks like superficial rail-surface markings or minor wear, choose close to 1.0. "
+    "If the image is blurry or uncertain, do not inflate the score; choose the lowest severity consistent "
+    "with the visible evidence. "
+    "Return only valid JSON with one numeric field named severity."
 )
 
 
@@ -69,6 +80,17 @@ def build_gemini_payload(image_path: Path) -> dict:
         "generationConfig": {
             "temperature": 0,
             "response_mime_type": "application/json",
+            "response_schema": {
+                "type": "object",
+                "properties": {
+                    "severity": {
+                        "type": "number",
+                        "minimum": 1.0,
+                        "maximum": 10.0,
+                    }
+                },
+                "required": ["severity"],
+            },
         },
     }
 
