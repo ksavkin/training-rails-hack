@@ -1,32 +1,21 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health
-from app.core.config import settings
+app = FastAPI()
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(
-        title=settings.app_name,
-        version=settings.app_version,
-        debug=settings.debug,
-    )
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    app.include_router(health.router)
-
-    @app.get("/", tags=["root"])
-    async def root() -> dict[str, str]:
-        return {"message": f"{settings.app_name} API is running"}
-
-    return app
+@app.get("/")
+async def root():
+    return {"message": "API is running"}
 
 
-app = create_app()
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+# Add more routes below.
+# Example:
+#
+# @app.post("/clients")
+# async def create_client(client: dict):
+#     return client

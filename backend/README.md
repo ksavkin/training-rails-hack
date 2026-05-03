@@ -1,6 +1,6 @@
-# Backend
+# Backend API
 
-FastAPI backend for training-rails.
+Simple FastAPI backend for training-rails.
 
 ## Setup
 
@@ -10,7 +10,6 @@ From the repository root:
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r backend\requirements.txt
-Copy-Item backend\.env.example backend\.env
 ```
 
 ## Run
@@ -22,8 +21,6 @@ uvicorn app.main:app --reload
 
 The API will be available at `http://127.0.0.1:8000`.
 
-Useful endpoints:
+Define API routes in `backend/app/main.py`.
 
-- `GET /`
-- `GET /health`
-- `GET /docs`
+Built-in docs are available at `http://127.0.0.1:8000/docs`.
