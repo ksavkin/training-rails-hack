@@ -3,6 +3,7 @@ import L from 'leaflet';
 // Leaflet plugin must use this path: vite resolves `heatmap.js` to vendor patch, but keeps this import on node_modules (see vite.config.js aliases).
 import HeatmapOverlayFactory from 'heatmap.js/plugins/leaflet-heatmap/leaflet-heatmap.js';
 import { ROUTES, CITIES, FOCUS_PIN, CAMERAS, TILE_PROVIDERS } from '../data/railData.js';
+import { makeDefectPinIcon, isPlaceholderMapImageUrl } from '../lib/leafletPinIcon.js';
 
 const HeatmapOverlay = HeatmapOverlayFactory?.default ?? HeatmapOverlayFactory;
 
@@ -61,31 +62,90 @@ function setupTilesWithFallback(map, badgeEl) {
   tryNext();
 }
 
-function makePinIcon(sev, isNewDrop) {
-  const cls = 'leaflet-pin ' + sev + (isNewDrop ? ' new-drop' : '');
-  return L.divIcon({
-    className: 'pin-icon-wrap',
-    html:
-      '<div class="' + cls + '">' +
-      '<span class="leaflet-pin-head"></span>' +
-      '<span class="leaflet-pin-tip"></span>' +
-      '</div>',
-    iconSize: [22, 30],
-    iconAnchor: [11, 29]
-  });
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/'/g, '&#39;');
+}
+
+function statRow(label, value) {
+  if (value == null || value === '') return '';
+  return (
+    '<div class="pin-popup-stat">' +
+    '<span class="pin-popup-stat-label">' +
+    escapeHtml(label) +
+    '</span>' +
+    '<span class="pin-popup-stat-val">' +
+    escapeHtml(String(value)) +
+    '</span>' +
+    '</div>'
+  );
 }
 
 function buildPopup(pin, onOpenDefect) {
   const wrap = document.createElement('div');
+  const showImg = pin.imageUrl && !isPlaceholderMapImageUrl(pin.imageUrl);
+  const preview = showImg
+    ? '<div class="pin-popup-preview"><img src="' +
+      escapeAttr(pin.imageUrl) +
+      '" alt="" loading="lazy" decoding="async" /></div>'
+    : '';
+
+  const confStr =
+    pin.conf != null && Number.isFinite(Number(pin.conf))
+      ? String(Math.round(Number(pin.conf) * 1000) / 1000)
+      : pin.conf != null
+        ? String(pin.conf)
+        : '';
+
+  const stats =
+    statRow('Line', pin.line) +
+    statRow(
+      'Severity',
+      pin.severityNum != null
+        ? String(pin.sev).toUpperCase() + ' · ' + pin.severityNum + '/10'
+        : String(pin.sev).toUpperCase()
+    ) +
+    statRow('Milepost', pin.mp) +
+    statRow('Confidence', confStr) +
+    statRow('Captured', pin.capturedAt) +
+    statRow('Latitude', Number.isFinite(pin.lat) ? pin.lat.toFixed(6) + '°' : '') +
+    statRow('Longitude', Number.isFinite(pin.lon) ? pin.lon.toFixed(6) + '°' : '') +
+    statRow('Status', pin.status) +
+    statRow('Device', pin.deviceId) +
+    statRow('Frame ID', pin.frameId != null ? String(pin.frameId) : '') +
+    statRow('Resolved at', pin.resolvedAt) +
+    statRow('Created', pin.createdAt) +
+    statRow('Updated', pin.updatedAt) +
+    statRow('Storage path', pin.imagePath) +
+    statRow('Notes', pin.notes);
+
   wrap.innerHTML =
-    '<div class="pin-popup-id">' + pin.id + ' · MP ' + pin.mp + '</div>' +
-    '<span class="sev-badge ' + pin.sev + '">' + pin.sev.toUpperCase() + '</span>' +
-    '<div class="pin-popup-title" style="margin-top:6px;">' + pin.type + '</div>' +
-    '<div class="pin-popup-meta">' +
-      'Confidence ' + pin.conf + '<br>' +
-      pin.lat.toFixed(4) + '°N · ' + (-pin.lon).toFixed(4) + '°W' +
+    preview +
+    '<div class="pin-popup-id">' +
+    escapeHtml(pin.id) +
+    ' · MP ' +
+    escapeHtml(pin.mp) +
     '</div>' +
-    '<a class="pin-popup-link">Open popup →</a>';
+    '<span class="sev-badge ' +
+    escapeHtml(pin.sev) +
+    '">' +
+    escapeHtml(String(pin.sev).toUpperCase()) +
+    '</span>' +
+    '<div class="pin-popup-title" style="margin-top:6px;">' +
+    escapeHtml(pin.type) +
+    '</div>' +
+    '<div class="pin-popup-stats">' +
+    stats +
+    '</div>' +
+    '<a class="pin-popup-link" href="#">Open detail →</a>';
   const link = wrap.querySelector('.pin-popup-link');
   if (link) {
     link.addEventListener('click', (e) => {
@@ -135,7 +195,7 @@ function addPins(map, pinList, onOpenDefect) {
   const markers = [];
   const dataMap = new Map();
   pinList.forEach((pin) => {
-    const marker = L.marker([pin.lat, pin.lon], { icon: makePinIcon(pin.sev, false) }).addTo(map);
+    const marker = L.marker([pin.lat, pin.lon], { icon: makeDefectPinIcon(pin, false) }).addTo(map);
     marker.on('click', () => onOpenDefect?.(pin));
     marker.bindPopup(buildPopup(pin, onOpenDefect), { closeButton: false, offset: [0, -18] });
     markers.push(marker);
@@ -238,11 +298,12 @@ const RailPinMap = forwardRef(function RailPinMap(
 
     // --- Heatmap (overlay instance + ref only). Toggle lives in a separate useEffect; pins effect updates setData. Do not add camera/train logic here. ---
     const heatCfg = {
-      radius: 2,
+      // scaleRadius:true multiplies radius by 2^zoom (hundreds–thousands of px); keep fixed screen px.
+      radius: 80,
       maxOpacity: 0.34,
       minOpacity: 0.04,
-      blur: 0.78,
-      scaleRadius: true,
+      blur: 0.5,
+      scaleRadius: false,
       useLocalExtrema: true,
       latField: 'lat',
       lngField: 'lng',
@@ -265,7 +326,7 @@ const RailPinMap = forwardRef(function RailPinMap(
     const startTrainAnimations = () => {
       map.invalidateSize();
       animateTrainAlongRoute(map, train422, ROUTES['1'].coords, 30000, stopRef);
-      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 90000, stopRef);
+      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 100000, stopRef);
     };
 
     map.whenReady(() => {
@@ -366,6 +427,11 @@ const RailPinMap = forwardRef(function RailPinMap(
   useImperativeHandle(ref, () => ({
     zoomIn: () => mapRef.current?.zoomIn(),
     zoomOut: () => mapRef.current?.zoomOut(),
+    focusOnPin: ({ lat, lon, zoom = 12 }) => {
+      const map = mapRef.current;
+      if (!map || !Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      map.setView([lat, lon], zoom, { animate: true });
+    },
     centerOnTrain: () => {
       const t = train422Ref.current;
       const m = mapRef.current;
@@ -379,7 +445,7 @@ const RailPinMap = forwardRef(function RailPinMap(
         demoMarkerRef.current = null;
       }
       const m = L.marker([FOCUS_PIN.lat, FOCUS_PIN.lon], {
-        icon: makePinIcon('crit', true)
+        icon: makeDefectPinIcon(FOCUS_PIN, { isNewDrop: true })
       }).addTo(map);
       m.on('click', () => onOpenDefectRef.current?.(FOCUS_PIN));
       m.bindPopup(buildPopup(FOCUS_PIN, (pin) => onOpenDefectRef.current?.(pin)), { closeButton: false, offset: [0, -18] });

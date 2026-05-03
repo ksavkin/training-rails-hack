@@ -4,7 +4,7 @@ import { CAMERAS } from '../data/railData.js';
 
 const TRACK_CAMERA_ICONS = [
   { cam: CAMERAS[0], classSuffix: '422', shortLabel: 'T-422', durationSec: 30, delaySec: 0 },
-  { cam: CAMERAS[1], classSuffix: '388', shortLabel: 'T-388', durationSec: 90, delaySec: -42 }
+  { cam: CAMERAS[1], classSuffix: '388', shortLabel: 'T-388', durationSec: 100, delaySec: -47 }
 ];
 
 const TICKS = [
