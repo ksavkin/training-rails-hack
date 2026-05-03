@@ -325,8 +325,8 @@ const RailPinMap = forwardRef(function RailPinMap(
 
     const startTrainAnimations = () => {
       map.invalidateSize();
-      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, 30000, stopRef);
-      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 100000, stopRef);
+      animateTrainAlongRoute(map, train422, ROUTES['1'].coords, 900000, stopRef);
+      animateTrainAlongRoute(map, train388, ROUTES['3'].coords, 900000, stopRef);
     };
 
     map.whenReady(() => {
