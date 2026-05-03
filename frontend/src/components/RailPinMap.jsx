@@ -390,8 +390,10 @@ const RailPinMap = forwardRef(function RailPinMap(
   const onOpenCameraRef = useRef(onOpenCamera);
   const lineFilterRef = useRef(lineFilter);
   const hoverPreviewRef = useRef(hoverPreview);
+  const pinsRef = useRef(pins);
   lineFilterRef.current = lineFilter;
   hoverPreviewRef.current = hoverPreview;
+  pinsRef.current = pins;
 
   // Keep callback ref in sync without re-running init effect
   useEffect(() => { onOpenDefectRef.current = onOpenDefect; }, [onOpenDefect]);
@@ -417,11 +419,11 @@ const RailPinMap = forwardRef(function RailPinMap(
     const heatCfg = {
       // scaleRadius:true multiplies radius by 2^zoom (hundreds–thousands of px); keep fixed screen px.
       radius: 80,
-      maxOpacity: 0.34,
-      minOpacity: 0.04,
-      blur: 0.5,
+      maxOpacity: 0.7,
+      minOpacity: 0.15,
+      blur: 0.65,
       scaleRadius: false,
-      useLocalExtrema: true,
+      useLocalExtrema: false,
       latField: 'lat',
       lngField: 'lng',
       valueField: 'count'
@@ -485,7 +487,7 @@ const RailPinMap = forwardRef(function RailPinMap(
     if (!map || !layer) return;
     if (heatmapEnabled) {
       layer.addTo(map);
-      if (typeof layer.bringToBack === 'function') layer.bringToBack();
+      layer.setData(buildHeatmapPayload(filterPinsByLine(pinsRef.current, lineFilterRef.current)));
     } else {
       map.removeLayer(layer);
     }
