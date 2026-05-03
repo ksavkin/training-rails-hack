@@ -1784,3 +1784,244 @@
   .map-focus-video video::-webkit-media-controls-mute-button {
     display: none !important;
   }
+
+  /* ========================================================================
+     Worker view (mobile-first field dispatch screen, served at /worker/{id})
+     ======================================================================== */
+  .worker-shell {
+    /* Document scroll is unlocked by WorkerView.jsx on mount (the dashboard
+       locks it). Just lay out the column; let the page scroll natively —
+       far more reliable on mobile than nested overflow:auto. */
+    min-height: 100vh;
+    background: var(--bg-0);
+    color: var(--text-1);
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px 14px 80px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-size: 14px;
+  }
+  .worker-shell.sev-crit { background: linear-gradient(180deg, rgba(255,61,84,0.10) 0%, var(--bg-0) 220px); }
+  .worker-shell.sev-high { background: linear-gradient(180deg, rgba(255,122,69,0.08) 0%, var(--bg-0) 220px); }
+  .worker-shell.sev-resolved { background: linear-gradient(180deg, rgba(74,222,128,0.08) 0%, var(--bg-0) 220px); }
+
+  .worker-loading, .worker-error {
+    padding: 60px 20px; text-align: center; color: var(--text-2);
+  }
+  .worker-error h1 { color: var(--crit); margin-bottom: 8px; font-size: 20px; }
+  .worker-error .muted { color: var(--text-3); margin-top: 12px; font-size: 12px; }
+
+  .worker-head { padding: 4px 2px 0; }
+  .worker-head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .worker-sev-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  .worker-sev-tag.sev-crit { background: rgba(255,61,84,0.18); color: var(--crit); }
+  .worker-sev-tag.sev-high { background: rgba(255,122,69,0.18); color: var(--high); }
+  .worker-sev-tag.sev-med  { background: rgba(234,179,8,0.18);  color: #facc15; }
+  .worker-sev-tag.sev-low  { background: rgba(34,197,94,0.18);  color: #4ade80; }
+  .worker-sev-tag.sev-resolved { background: rgba(16,185,129,0.18); color: #34d399; }
+  .worker-type { font-size: 18px; font-weight: 600; color: #fff; }
+  .worker-sub { color: var(--text-2); font-size: 12px; font-family: var(--mono); margin-top: 4px; }
+
+  .worker-map {
+    width: 100%;
+    height: 240px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+  }
+
+  .worker-distance {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-2);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .worker-distance .big { font-size: 22px; font-weight: 700; color: #fff; }
+  .worker-distance .dir { font-size: 13px; color: var(--text-2); font-family: var(--mono); }
+  .worker-distance .muted { color: var(--text-3); font-size: 13px; }
+
+  .worker-photo {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: #000;
+  }
+  .worker-photo img { width: 100%; height: auto; display: block; }
+
+  .worker-meta {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .worker-meta .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .worker-meta .row span { color: var(--text-2); }
+  .worker-meta .row b { color: #fff; font-weight: 500; text-align: right; word-break: break-word; }
+  .worker-meta .row.notes b { font-style: italic; color: var(--text-1); }
+
+  .worker-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--bg-2);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .worker-timeline .step {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--ok); font-size: 13px;
+  }
+
+  .worker-comment {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .worker-comment label { font-size: 12px; color: var(--text-2); }
+  .worker-comment label .muted { color: var(--text-3); }
+  .worker-comment textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-2);
+    color: var(--text-1);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 64px;
+  }
+  .worker-comment textarea:focus { outline: none; border-color: var(--accent); }
+
+  .worker-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .worker-actions .btn {
+    width: 100%;
+    padding: 14px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    color: var(--text-1);
+    cursor: pointer;
+  }
+  .worker-actions .btn:hover { background: var(--bg-3); }
+  .worker-actions .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .worker-actions .btn.primary {
+    background: var(--ok);
+    color: #06251a;
+    border-color: transparent;
+  }
+  .worker-actions .btn.danger {
+    background: rgba(255,61,84,0.12);
+    color: var(--crit);
+    border-color: rgba(255,61,84,0.35);
+  }
+
+  .worker-terminal {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+  }
+  .worker-terminal.completed {
+    background: rgba(74,222,128,0.10);
+    border-color: rgba(74,222,128,0.35);
+  }
+  .worker-terminal.cannot_complete {
+    background: rgba(255,61,84,0.10);
+    border-color: rgba(255,61,84,0.35);
+  }
+  .worker-terminal svg { width: 28px; height: 28px; flex-shrink: 0; }
+  .worker-terminal.completed svg { color: var(--ok); }
+  .worker-terminal.cannot_complete svg { color: var(--crit); }
+  .worker-terminal h2 { margin: 0 0 4px; font-size: 16px; color: #fff; }
+  .worker-terminal p { margin: 0; color: var(--text-2); font-size: 13px; }
+
+  .worker-foot {
+    margin-top: 8px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* Wider screens — keep the column layout, just don't span fullscreen. */
+  @media (min-width: 540px) {
+    .worker-shell { padding: 24px 20px 100px; }
+    .worker-map { height: 320px; }
+  }
+
+  /* worker-photo is now a <button> for click-to-zoom — strip native button look */
+  button.worker-photo {
+    width: 100%;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    cursor: zoom-in;
+    display: block;
+  }
+  button.worker-photo:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .worker-lightbox {
+    position: fixed; inset: 0; z-index: 400;
+    background: rgba(0,0,0,0.92);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; box-sizing: border-box;
+    cursor: zoom-out;
+  }
+  .worker-lightbox img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    cursor: default;
+    border-radius: 6px;
+    box-shadow: 0 12px 60px rgba(0,0,0,.6);
+  }
+  .worker-lightbox-close {
+    position: absolute; top: 14px; right: 14px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .worker-lightbox-close svg { width: 22px; height: 22px; }
+  .worker-lightbox-close:hover { background: rgba(255,255,255,0.22); }

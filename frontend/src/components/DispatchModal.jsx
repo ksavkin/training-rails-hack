@@ -35,6 +35,11 @@ export default function DispatchModal({ open, pin, apiUrl, apiToken, onClose }) 
         lon: pin.lon,
         severity: pin.severityNum ?? pin.severity,
         timestamp: pin.capturedAt ?? new Date().toISOString(),
+        // Backend has no PUBLIC_HOST env; we know the URL the worker should
+        // open because that worker page is served by THIS frontend on this
+        // exact origin. Build it here, ship it in the payload, backend just
+        // appends the line to the SMS body.
+        worker_url: `${window.location.origin}/worker/${encodeURIComponent(pin.id)}`,
       };
       const headers = { 'Content-Type': 'application/json' };
       if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
