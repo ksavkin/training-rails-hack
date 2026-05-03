@@ -6,6 +6,8 @@ import react from '@vitejs/plugin-react';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  /** Expose `PUBLIC_*` from `.env` to client code (same names as Supabase dashboard snippets). */
+  envPrefix: ['VITE_', 'PUBLIC_'],
   plugins: [react()],
   server: { port: 5173, open: true },
   resolve: {

@@ -1175,6 +1175,24 @@
     border-radius: 999px;
     border: 2px solid #0a0d10;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.12);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .leaflet-pin-head-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+  }
+  .leaflet-pin-thumb {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 999px;
+  }
+  .leaflet-pin.has-thumb .leaflet-pin-head {
+    background: #14191f;
   }
   .leaflet-pin-tip {
     position: absolute;
@@ -1186,18 +1204,18 @@
     transform-origin: center;
     border-radius: 2px;
   }
-  .leaflet-pin.crit .leaflet-pin-head,
+  .leaflet-pin.crit .leaflet-pin-head-fill,
   .leaflet-pin.crit .leaflet-pin-tip { background: var(--crit); }
-  .leaflet-pin.high .leaflet-pin-head,
+  .leaflet-pin.high .leaflet-pin-head-fill,
   .leaflet-pin.high .leaflet-pin-tip { background: var(--high); }
-  .leaflet-pin.med .leaflet-pin-head,
+  .leaflet-pin.med .leaflet-pin-head-fill,
   .leaflet-pin.med .leaflet-pin-tip { background: var(--warn); }
-  .leaflet-pin.low .leaflet-pin-head,
+  .leaflet-pin.low .leaflet-pin-head-fill,
   .leaflet-pin.low .leaflet-pin-tip { background: var(--info); }
-  .leaflet-pin.resolved .leaflet-pin-head,
+  .leaflet-pin.resolved .leaflet-pin-head-fill,
   .leaflet-pin.resolved .leaflet-pin-tip { background: var(--ok); opacity: 0.65; }
 
-  .leaflet-pin.crit .leaflet-pin-head::before {
+  .leaflet-pin.crit:not(.has-thumb) .leaflet-pin-head::before {
     content: '';
     position: absolute;
     inset: -5px;
@@ -1220,6 +1238,21 @@
     0%   { transform: scale(0) translateY(-30px); opacity: 0; }
     60%  { transform: scale(1.6) translateY(0);   opacity: 1; }
     100% { transform: scale(1)   translateY(0);   opacity: 1; }
+  }
+
+  /* Defect page mini-map: smaller pins */
+  #defect-mini-map-leaflet .leaflet-pin--compact {
+    width: 16px;
+    height: 24px;
+  }
+  #defect-mini-map-leaflet .leaflet-pin--compact .leaflet-pin-head {
+    width: 16px;
+    height: 16px;
+  }
+  #defect-mini-map-leaflet .leaflet-pin--compact .leaflet-pin-tip {
+    width: 8px;
+    height: 8px;
+    bottom: 0;
   }
 
   /* Train marker */
@@ -1304,6 +1337,47 @@
     color: var(--text-3); margin-bottom: 4px;
   }
   .pin-popup-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .pin-popup-preview {
+    margin: -4px 0 10px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    max-width: 220px;
+  }
+  .pin-popup-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+    vertical-align: middle;
+  }
+  .pin-popup-stats {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .pin-popup-stat {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .pin-popup-stat-label {
+    font-family: var(--sans);
+    color: var(--text-3);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pin-popup-stat-val {
+    font-family: var(--mono);
+    color: var(--text-1);
+    word-break: break-word;
+  }
   .pin-popup-meta {
     font-family: var(--mono); font-size: 11px;
     color: var(--text-2); line-height: 1.6;
@@ -1380,6 +1454,15 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+  .map-focus-media-empty {
+    min-height: 200px;
+    display: grid;
+    place-items: center;
+    color: var(--text-3);
+    font-size: 13px;
+    padding: 24px;
+    text-align: center;
   }
   .map-focus-meta {
     padding: 18px;

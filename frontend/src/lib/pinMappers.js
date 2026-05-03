@@ -1,3 +1,5 @@
+import { resolveDefectImageUrl } from './defectImageUrl.js';
+
 function formatCapturedAt(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -60,9 +62,18 @@ export function shouldTriggerCriticalRealtimeAlert(prevRow, nextRow) {
  * Maps a `pins` table row (your Supabase schema) to the shape used by the map and popups.
  * @param {Record<string, unknown>} row
  */
+function pickImagePath(row) {
+  const v = row.image_path ?? row.imagePath;
+  if (v == null) return '';
+  const s = String(v).trim();
+  return s;
+}
+
 export function rowToPin(row) {
   const id = row.id != null ? String(row.id) : '';
   const severityNum = row.severity != null ? Number(row.severity) : null;
+  const notesRaw = row.notes != null ? String(row.notes).trim() : '';
+  const imagePath = pickImagePath(row);
   return {
     _rowId: id,
     id,
@@ -75,10 +86,15 @@ export function rowToPin(row) {
     mp: row.milepost != null ? String(row.milepost) : '',
     conf: row.confidence != null ? Number(row.confidence) : 0,
     capturedAt: formatCapturedAt(row.captured_at),
-    imageUrl: row.image_path != null ? String(row.image_path) : '',
+    imageUrl: resolveDefectImageUrl(imagePath),
+    imagePath: imagePath || undefined,
     status: row.status != null ? String(row.status) : undefined,
     deviceId: row.device_id != null ? String(row.device_id) : undefined,
-    frameId: row.frame_id != null ? Number(row.frame_id) : undefined
+    frameId: row.frame_id != null ? Number(row.frame_id) : undefined,
+    resolvedAt: row.resolved_at != null ? formatCapturedAt(row.resolved_at) : undefined,
+    createdAt: row.created_at != null ? formatCapturedAt(row.created_at) : undefined,
+    updatedAt: row.updated_at != null ? formatCapturedAt(row.updated_at) : undefined,
+    notes: notesRaw || undefined
   };
 }
 
