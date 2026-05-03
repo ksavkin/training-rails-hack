@@ -76,14 +76,16 @@ function escapeAttr(s) {
   return escapeHtml(s).replace(/'/g, '&#39;');
 }
 
-function statRow(label, value) {
+function statRow(label, value, valueClass = '') {
   if (value == null || value === '') return '';
   return (
     '<div class="pin-popup-stat">' +
     '<span class="pin-popup-stat-label">' +
     escapeHtml(label) +
     '</span>' +
-    '<span class="pin-popup-stat-val">' +
+    '<span class="pin-popup-stat-val ' +
+    escapeHtml(valueClass) +
+    '">' +
     escapeHtml(String(value)) +
     '</span>' +
     '</div>'
@@ -122,7 +124,8 @@ function buildPopup(pin, onOpenDefect) {
       'Severity',
       pin.severityNum != null
         ? String(pin.sev).toUpperCase() + ' · ' + pin.severityNum + '/10'
-        : String(pin.sev).toUpperCase()
+        : String(pin.sev).toUpperCase(),
+      'pin-popup-severity-' + pin.sev
     ) +
     statRow('Confidence', confStr) +
     statRow('Captured', pin.capturedAt) +

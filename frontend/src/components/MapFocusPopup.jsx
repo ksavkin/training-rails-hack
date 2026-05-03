@@ -218,10 +218,8 @@ export default function MapFocusPopup({
               {data.imageUrl ? (
                 <img src={data.imageUrl} alt={`${data.id} defect`} />
               ) : (
-                <div className="map-focus-media-empty">
-                  No image — missing or empty <span className="mono">image_path</span> on this pin, or could not
-                  build a public URL (check <span className="mono">PUBLIC_SUPABASE_URL</span> in{' '}
-                  <span className="mono">frontend/.env</span> and restart dev server).
+                <div className="map-focus-media-empty stream-unavailable">
+                  Defect image unavailable
                 </div>
               )}
             </div>
