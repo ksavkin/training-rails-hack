@@ -15,13 +15,13 @@ Training Rails uses a train-mounted camera and a custom-trained YOLO computer vi
 │  (Trained)   │     │  (Jetson)   │      │  (FastAPI)  │      │ React/Vite  │
 └──────────────┘     └─────────────┘      └─────────────┘      └─────────────┘
       │                    │                     │                    │
- Defect Detection     Camera + GPS        Supabase + SMS         Google Maps
+ Defect Detection     Camera + GPS        Supabase + SMS       Leaflet (OSM)
 ```
 
 - **YOLO Model**: Custom-trained rail-defect detector for cracks, squats, flaking, and surface damage
 - **Edge**: Jetson camera pipeline for capture, inference, upload, and live video streaming to the frontend through ngrok
 - **Backend**: FastAPI service for image lookup, severity scoring, Supabase access, and SMS dispatch
-- **Frontend**: React/Vite inspector dashboard with map pins, live video, and dispatch controls
+- **Frontend**: React/Vite inspector dashboard with Leaflet map (OSM-style tiles), defect pins, live video, and dispatch controls
 - **Supabase**: Stores defect images and pin data
 - **Twilio**: Sends urgent operator alerts
 
