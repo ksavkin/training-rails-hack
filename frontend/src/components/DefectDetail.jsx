@@ -24,8 +24,25 @@ const THUMBS = [
   { label: '184733', highlight: false }
 ];
 
-export default function DefectDetail({ active, pins, onBack, onOpenDispatch, onResolve, resolved }) {
+export default function DefectDetail({
+  active,
+  pins,
+  selectedPin,
+  onBack,
+  onOpenDispatch,
+  onAcknowledge,
+  onResolve,
+  resolved,
+  actionPending,
+}) {
   const [thumb, setThumb] = useState(2);
+
+  const pinId = selectedPin?.id ?? 'DEF-2026-04891';
+  const pinStatus = selectedPin?.status ?? 'new';
+  const pinTitle = selectedPin?.type
+    ? `${selectedPin.type} · ${selectedPin.mp ?? ''}`.trim()
+    : 'Transverse crack · railhead';
+  const isNew = pinStatus === 'new';
 
   return (
     <section className={`page ${active ? 'active' : ''}`}>
@@ -35,10 +52,10 @@ export default function DefectDetail({ active, pins, onBack, onOpenDispatch, onR
             <button className="btn ghost" style={{ height: 26, padding: '0 8px' }} onClick={onBack}>
               <Icon name="i-back" />Back
             </button>
-            <span className="mono" style={{ fontSize: 12, color: 'var(--text-2)' }}>DEF-2026-04891</span>
-            <span className="status-pill new">NEW</span>
+            <span className="mono" style={{ fontSize: 12, color: 'var(--text-2)' }}>{pinId}</span>
+            <span className={`status-pill ${pinStatus}`}>{pinStatus.toUpperCase()}</span>
           </div>
-          <h1 className="page-title">Transverse crack · railhead</h1>
+          <h1 className="page-title">{pinTitle}</h1>
           <div className="page-sub mono">DETECTED 29 APR 14:23:11.453 UTC · CORVALLIS–ALBANY · MP 24+340 · L1</div>
         </div>
         <div className="page-actions">
@@ -137,18 +154,27 @@ export default function DefectDetail({ active, pins, onBack, onOpenDispatch, onR
           <div className="meta-card">
             <h3>Actions</h3>
             <div className="actions-stack">
-              <button className="btn danger" onClick={onOpenDispatch}>
+              <button
+                className="btn danger"
+                onClick={onOpenDispatch}
+                disabled={!selectedPin || actionPending || pinStatus === 'resolved'}
+              >
                 <Icon name="i-send" />Dispatch crew now
               </button>
-              <button className="btn">
-                <Icon name="i-eye" />Acknowledge (low priority)
+              <button
+                className="btn"
+                onClick={onAcknowledge}
+                disabled={!selectedPin || actionPending || !isNew}
+              >
+                <Icon name="i-eye" />
+                {pinStatus === 'acknowledged' ? 'Acknowledged' : 'Acknowledge (low priority)'}
               </button>
               <button
                 className="btn success"
                 onClick={onResolve}
-                disabled={resolved}
+                disabled={!selectedPin || actionPending || resolved || pinStatus === 'resolved'}
               >
-                <Icon name="i-check" />{resolved ? 'Resolved' : 'Mark as resolved'}
+                <Icon name="i-check" />{resolved || pinStatus === 'resolved' ? 'Resolved' : 'Mark as resolved'}
               </button>
             </div>
           </div>

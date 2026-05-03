@@ -1,21 +1,63 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icons.jsx';
 
-export default function DispatchModal({ open, onClose }) {
-  const [pending, setPending] = useState(true);
-  const [smsState, setSmsState] = useState('idle'); // idle | sending | sent
+export default function DispatchModal({ open, pin, apiUrl, apiToken, onClose }) {
+  const [smsState, setSmsState] = useState('idle'); // idle | sending | sent | error
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [sentInfo, setSentInfo] = useState(null);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
-    setPending(true);
     setSmsState('idle');
-    const t = setTimeout(() => setPending(false), 1200);
-    return () => clearTimeout(t);
+    setErrorMsg(null);
+    setSentInfo(null);
+    inFlightRef.current = false;
   }, [open]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    // Synchronous re-entry guard. setSmsState is async; two rapid clicks can
+    // both pass the disabled check before React rerenders the button. The ref
+    // is updated synchronously, so the second click bails out here.
+    if (inFlightRef.current) return;
+    if (!pin?.id) {
+      setErrorMsg('No pin selected');
+      setSmsState('error');
+      return;
+    }
+    inFlightRef.current = true;
     setSmsState('sending');
-    setTimeout(() => setSmsState('sent'), 1500);
+    setErrorMsg(null);
+    try {
+      const payload = {
+        pin_id: pin.id,
+        lat: pin.lat,
+        lon: pin.lon,
+        severity: pin.severityNum ?? pin.severity,
+        timestamp: pin.capturedAt ?? new Date().toISOString(),
+      };
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiToken) headers.Authorization = `Bearer ${apiToken}`;
+      const res = await fetch(`${apiUrl}/dispatch`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        setErrorMsg(text || `HTTP ${res.status}`);
+        setSmsState('error');
+        return;
+      }
+      const data = await res.json();
+      setSentInfo({ to: data.to, sid: data.message_sid });
+      setSmsState('sent');
+    } catch (err) {
+      setErrorMsg(err.message || 'Network error');
+      setSmsState('error');
+    } finally {
+      inFlightRef.current = false;
+    }
   };
 
   if (!open) return null;
@@ -35,38 +77,32 @@ export default function DispatchModal({ open, onClose }) {
 
         <div className="dispatch-modal-body">
           <div style={{ fontSize: 13, color: 'var(--text-1)', marginBottom: 14 }}>
-            AI is generating a work order and SMS for the dispatch crew.
+            Send a real SMS to the maintenance operator and mark this pin as dispatched.
           </div>
 
-          {pending && (
-            <div className="dispatch-pending">
-              <div className="spinner" />
-              <span>Generating work order via Claude Haiku...</span>
-            </div>
-          )}
+          <div className="work-order-preview">
+            <span className="label">PIN ID</span>{pin?.id ?? '—'}
+            {'\n'}<span className="label">PRIORITY</span>{pin?.severityNum >= 8 ? 'P1 · URGENT' : 'P2'}
+            {'\n'}<span className="label">DEFECT</span>{pin?.type ?? 'unknown'} · severity {pin?.severityNum ?? pin?.severity ?? '—'}/10
+            {'\n'}<span className="label">LOCATION</span>{pin?.mp ?? '—'}
+            {'\n'}<span className="label">GPS</span>{pin?.lat?.toFixed?.(4) ?? '—'}°N, {pin?.lon?.toFixed?.(4) ?? '—'}°W
+          </div>
 
-          {!pending && (
-            <div className="work-order-preview">
-              <span className="label">ORDER ID</span>WO-2026-04891
-              {'\n'}<span className="label">PRIORITY</span>P1 · URGENT
-              {'\n'}<span className="label">DEFECT</span>Transverse crack · severity 9/10
-              {'\n'}<span className="label">LOCATION</span>Corvallis–Albany · MP 24+340 · L1
-              {'\n'}<span className="label">GPS</span>44.5638°N, 123.2794°W
-              {'\n'}<span className="label">CREW</span>Maintenance team Albany
-              {'\n'}<span className="label">ETA</span>~25 min
-              {'\n'}<span className="label">EQUIPMENT</span>Rail welder, grinder, gauge tools
-            </div>
-          )}
-
-          {smsState === 'sent' && (
+          {smsState === 'sent' && sentInfo && (
             <div className="sms-preview">
               <div className="sms-preview-head">
                 <Icon name="i-phone" style={{ verticalAlign: 'middle', width: 12, height: 12 }} />
-                {' '}SMS sent to +1 (541) ***-4291
+                {' '}SMS sent to {sentInfo.to}
               </div>
-              <div className="sms-text">
-                URGENT: Transverse crack at MP 24+340 (Corvallis–Albany line, L1). Severity 9. GPS 44.5638°N, 123.2794°W. Bring rail welder. WO-2026-04891.
+              <div className="sms-text" style={{ fontSize: 11, color: 'var(--text-2)' }}>
+                Twilio SID: {sentInfo.sid}
               </div>
+            </div>
+          )}
+
+          {smsState === 'error' && errorMsg && (
+            <div className="sms-preview" style={{ borderColor: 'var(--crit)' }}>
+              <div className="sms-preview-head">Failed: {errorMsg}</div>
             </div>
           )}
 
@@ -75,11 +111,12 @@ export default function DispatchModal({ open, onClose }) {
             <button
               className={`btn ${smsState === 'sent' ? 'success' : 'danger'}`}
               onClick={handleConfirm}
-              disabled={smsState !== 'idle' || pending}
+              disabled={!pin?.id || smsState === 'sending' || smsState === 'sent'}
             >
               {smsState === 'idle' && (<><Icon name="i-send" />Dispatch & send SMS</>)}
               {smsState === 'sending' && (<><div className="spinner" />Sending...</>)}
               {smsState === 'sent' && (<><Icon name="i-check" />SMS sent</>)}
+              {smsState === 'error' && (<><Icon name="i-send" />Retry</>)}
             </button>
           </div>
         </div>
