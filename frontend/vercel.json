@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/worker/:pinId", "destination": "/index.html" },
+    { "source": "/worker/:pinId/:rest*", "destination": "/index.html" }
+  ]
+}
