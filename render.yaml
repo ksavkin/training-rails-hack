@@ -1,0 +1,60 @@
+# Render.com Infrastructure-as-Code config.
+# Connect this repo on render.com → New + → Blueprint → pick this file.
+# Render auto-creates the service from the spec below.
+#
+# Secrets (sync: false) are NOT committed — you fill them in once on the
+# Render dashboard after the service is created. Plain values (PYTHON_VERSION,
+# APP_NAME, etc.) are pre-set here and applied automatically.
+
+services:
+  - type: web
+    name: training-rails-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: oregon
+    branch: feature/mvp1
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # Render's Python image. 3.11 is the stablest current LTS for FastAPI deps.
+      - key: PYTHON_VERSION
+        value: 3.11.10
+
+      # Plain config (defaults — override on dashboard if needed).
+      - key: APP_NAME
+        value: training-rails
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: SUPABASE_STORAGE_BUCKET
+        value: defect-images
+
+      # Secrets — fill in on Render dashboard after first deploy.
+      # Same values as your local backend/.env.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_SANDBOX_FROM
+        sync: false
+      - key: PERSONAL_PHONE
+        sync: false
+
+      # Static bearer token gating /detect, /dispatch, /pins/{id}/* writes.
+      # Frontend must send the same value via VITE_API_TOKEN.
+      - key: API_TOKEN
+        sync: false
+
+      # Comma-separated allowlist for CORS. Must include your Vercel URL,
+      # e.g. "https://training-rails.vercel.app,https://*.vercel.app".
+      - key: CORS_ORIGINS
+        sync: false
