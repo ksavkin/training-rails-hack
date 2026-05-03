@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from app.config import APP_NAME
-from app.detections import detect_defect, detection_response
+from app.detections import detect_defect
 
 router = APIRouter()
 

@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 from fastapi import HTTPException
 
 from app.gemini_client import request_severity
@@ -17,26 +15,8 @@ def detect_defect(defect: dict) -> dict:
     gemini_text = request_severity(storage_image.data, storage_image.mime_type)
     severity = parse_severity(gemini_text)
 
-    response = detection_response(severity)
-    response["gemini_raw"] = gemini_text
-    response["severity_source"] = "gemini"
-    response["image_source"] = {
-        "bucket": storage_image.bucket,
-        "path": storage_image.path,
-    }
-    return response
+    return detection_response(severity)
 
 
 def detection_response(severity: float) -> dict:
-    return {
-        "pin_id": str(uuid4()),
-        "severity": severity,
-        "severity_breakdown": {
-            "base": severity,
-            "size_factor": 0,
-            "position_factor": 0,
-        },
-        "is_critical": severity >= 8.0,
-        "sms_queued": True,
-        "status": "new",
-    }
+    return {"severity": severity}

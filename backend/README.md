@@ -35,6 +35,28 @@ The server runs without auto-reload by default so it stays stable for LAN access
 
 Define API routes in `backend/app/routes.py`.
 
+## Detect
+
+`POST /detect`
+
+Request JSON:
+
+```json
+{
+  "image_path": "seed/defect_05.jpg"
+}
+```
+
+`image_path` is the object path inside the Supabase Storage bucket configured by `SUPABASE_STORAGE_BUCKET`.
+
+Response JSON:
+
+```json
+{
+  "severity": 2.5
+}
+```
+
 ## PowerShell
 
 If you are using PowerShell instead of bash:
