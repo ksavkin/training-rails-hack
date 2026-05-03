@@ -11,6 +11,12 @@ npm run dev
 
 Vite serves the app at http://localhost:5173.
 
+To point the T-422 live feed at the Jetson/ngrok MJPEG stream, set this in `frontend/.env`:
+
+```env
+VITE_JETSON_STREAM_URL=https://your-ngrok-url/stream
+```
+
 ## Build
 
 ```bash

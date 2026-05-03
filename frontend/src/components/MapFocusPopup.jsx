@@ -86,7 +86,11 @@ export default function MapFocusPopup({ open, mode, data, onClose }) {
           </div>
         ) : (
           <div className="map-focus-video">
-            <video src={data.streamUrl} controls autoPlay muted playsInline />
+            {data.streamKind === 'mjpeg' ? (
+              <img src={data.streamUrl} alt={`${data.label} live stream`} />
+            ) : (
+              <video src={data.streamUrl} controls autoPlay muted playsInline />
+            )}
           </div>
         )}
       </div>
