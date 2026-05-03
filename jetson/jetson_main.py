@@ -188,7 +188,7 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url,
     date_str   = time.strftime("%Y-%m-%d", time.gmtime())
     ts_ms      = int(time.time() * 1000)
     uid6       = uuid.uuid4().hex[:6]
-    image_path = "{}/{}_{}_{}.jpg".format(date_str, device_id, ts_ms, uid6)
+    image_path = "pins/{}/{}_{}_{}.jpg".format(date_str, device_id, ts_ms, uid6)
 
     # Step 1: Supabase Storage (direct REST API, no supabase-py needed)
     try:
@@ -209,18 +209,18 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url,
         print("[upload] Storage upload failed: {} -- skipping POST".format(exc))
         return
 
-    # Step 2: FastAPI /detect -- send only image_path, get back severity
+    # Step 2: FastAPI /detect -- send relative storage path, get back severity
     try:
         resp = requests.post(
             "{}/detect".format(fastapi_url),
-            json={"image_path": public_url},
+            json={"image_path": image_path},
             timeout=10,
         )
         if resp.status_code not in (200, 201):
             print("[detect] /detect returned {}: {}".format(
                 resp.status_code, resp.text[:120]))
             return
-        severity = resp.json().get("severity")
+        severity = int(resp.json().get("severity"))
     except Exception as exc:
         print("[detect] POST failed: {}".format(exc))
         return
@@ -229,14 +229,16 @@ def _upload_and_post(supabase_url, supabase_key, fastapi_url,
     defect_type = DEFECT_TYPE_MAP.get(det["class_name"], "transverse_crack")
     pin = {
         "device_id":   device_id,
+        "line_id":     1,
         "defect_type": defect_type,
         "confidence":  round(float(det["confidence"]), 4),
         "bbox":        [x1, y1, x2 - x1, y2 - y1],
         "lat":         gps.get("lat", 0.0),
         "lon":         gps.get("lon", 0.0),
+        "speed_mps":   gps.get("speed", None),
         "image_path":  public_url,
         "severity":    severity,
-        "detected_at": captured_at,
+        "captured_at": captured_at,
     }
     try:
         resp = requests.post(
