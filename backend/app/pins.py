@@ -100,6 +100,38 @@ def resolve_pin(pin_id: str) -> dict:
     )
 
 
+def reopen_pin(pin_id: str) -> dict:
+    """Bring a resolved pin back to its prior active status.
+
+    We don't keep a full transition log, but the *_at timestamp columns
+    (`dispatched_at`, `acknowledged_at`) survive the resolve transition,
+    so they encode where the pin came from. Priority: dispatched first,
+    then acknowledged, else new. Only `resolved_at` is cleared — we keep
+    the other timestamps as historical evidence of what happened to the
+    pin before it was resolved.
+
+    Refuses if pin is not currently resolved (allowed_from=['resolved'])
+    so a double-click returns 409 instead of clobbering an active pin.
+    """
+    current = get_pin(pin_id)
+    if current.get("status") != "resolved":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Pin {pin_id} is not resolved (status='{current.get('status')}')",
+        )
+    if current.get("dispatched_at"):
+        prev = "dispatched"
+    elif current.get("acknowledged_at"):
+        prev = "acknowledged"
+    else:
+        prev = "new"
+    return _patch(
+        pin_id,
+        {"status": prev, "resolved_at": None},
+        allowed_from=["resolved"],
+    )
+
+
 def mark_dispatched(pin_id: str, sms_sid: str | None = None) -> dict:
     """Atomically claim dispatch slot. Refuses if pin not in {new, acknowledged}."""
     fields: dict = {"status": "dispatched", "dispatched_at": _now_iso()}

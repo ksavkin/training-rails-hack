@@ -4,7 +4,7 @@ from app.auth import verify_api_token
 from app.config import APP_NAME
 from app.detections import detect_defect
 from app.dispatch import dispatch_operator
-from app.pins import acknowledge_pin, resolve_pin
+from app.pins import acknowledge_pin, reopen_pin, resolve_pin
 
 router = APIRouter()
 
@@ -43,3 +43,8 @@ async def acknowledge(pin_id: str):
 @router.post("/pins/{pin_id}/resolve", dependencies=[Depends(verify_api_token)])
 async def resolve(pin_id: str):
     return resolve_pin(pin_id)
+
+
+@router.post("/pins/{pin_id}/reopen", dependencies=[Depends(verify_api_token)])
+async def reopen(pin_id: str):
+    return reopen_pin(pin_id)
