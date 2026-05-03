@@ -1,5 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, forwardRef } from 'react';
 import L from 'leaflet';
+// Leaflet plugin must use this path: vite resolves `heatmap.js` to vendor patch, but keeps this import on node_modules (see vite.config.js aliases).
 import HeatmapOverlayFactory from 'heatmap.js/plugins/leaflet-heatmap/leaflet-heatmap.js';
 import { ROUTES, CITIES, FOCUS_PIN, CAMERAS, TILE_PROVIDERS } from '../data/railData.js';
 
@@ -235,6 +236,23 @@ const RailPinMap = forwardRef(function RailPinMap(
     addCities(map);
     pinStateRef.current = addPins(map, [], (pin) => onOpenDefectRef.current?.(pin));
 
+    // --- Heatmap (overlay instance + ref only). Toggle lives in a separate useEffect; pins effect updates setData. Do not add camera/train logic here. ---
+    const heatCfg = {
+      radius: 2,
+      maxOpacity: 0.34,
+      minOpacity: 0.04,
+      blur: 0.78,
+      scaleRadius: true,
+      useLocalExtrema: true,
+      latField: 'lat',
+      lngField: 'lng',
+      valueField: 'count'
+    };
+    const heatLayer = new HeatmapOverlay(heatCfg);
+    heatLayer.setData(buildHeatmapPayload(filterPinsByLine([], lineFilterRef.current)));
+    heatmapLayerRef.current = heatLayer;
+
+    // --- Live camera markers (rAF path along ROUTES; unrelated to heatmap layer lifetime). ---
     const train422 = L.marker(ROUTES['1'].coords[0], { icon: makeCameraIcon('T-422', ''), zIndexOffset: 800 }).addTo(map);
     const train388 = L.marker(ROUTES['3'].coords[1], { icon: makeCameraIcon('T-388', 't-388'), zIndexOffset: 800 }).addTo(map);
     train422.on('click', () => onOpenCameraRef.current?.(CAMERAS[0]));
@@ -264,21 +282,6 @@ const RailPinMap = forwardRef(function RailPinMap(
       });
       resizeObs.observe(containerRef.current);
     }
-
-    const heatCfg = {
-      radius: 2,
-      maxOpacity: 0.34,
-      minOpacity: 0.04,
-      blur: 0.78,
-      scaleRadius: true,
-      useLocalExtrema: true,
-      latField: 'lat',
-      lngField: 'lng',
-      valueField: 'count'
-    };
-    const heatLayer = new HeatmapOverlay(heatCfg);
-    heatLayer.setData(buildHeatmapPayload(filterPinsByLine([], lineFilterRef.current)));
-    heatmapLayerRef.current = heatLayer;
 
     setTimeout(() => map.invalidateSize(), 0);
 
