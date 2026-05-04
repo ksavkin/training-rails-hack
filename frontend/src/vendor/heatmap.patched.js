@@ -17,7 +17,7 @@
     context[name] = factory();
   }
 
-})("h337", this, function () {
+})("h337", typeof globalThis !== "undefined" ? globalThis : this, function () {
 
 // Heatmap Config stores default values and will be merged with instance config
 var HeatmapConfig = {
@@ -721,3 +721,15 @@ return heatmapFactory;
 
 
 });
+
+const __h337 = (typeof globalThis !== "undefined" && globalThis.h337) || undefined;
+if (__h337 && typeof window !== "undefined" && !window.h337) window.h337 = __h337;
+
+// Expose `create` and `register` as named ESM exports too. esbuild's CJS-from-ESM
+// interop returns the module namespace object for `require('heatmap.js')`; without
+// these the leaflet-heatmap plugin would see {default: factory} (no `.create`).
+const create = (cfg) => __h337 && __h337.create(cfg);
+const register = (key, plugin) => __h337 && __h337.register(key, plugin);
+
+export default __h337;
+export { __h337 as h337, create, register };
