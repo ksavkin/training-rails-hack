@@ -6,15 +6,21 @@
  *
  * :: 2016-09-05 01:16
  */
+let __heatmapFactory;
 ;(function (name, context, factory) {
+
+  // Always capture the factory result so ESM exports below have a reference,
+  // regardless of which UMD branch the bundler picks (Rollup treats this file
+  // as CJS in production, so the global-branch assignment never runs).
+  __heatmapFactory = factory();
 
   // Supports UMD. AMD, CommonJS/Node.js and browser context
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = factory();
+    module.exports = __heatmapFactory;
   } else if (typeof define === "function" && define.amd) {
-    define(factory);
-  } else {
-    context[name] = factory();
+    define(function () { return __heatmapFactory; });
+  } else if (context) {
+    context[name] = __heatmapFactory;
   }
 
 })("h337", typeof globalThis !== "undefined" ? globalThis : this, function () {
@@ -722,14 +728,16 @@ return heatmapFactory;
 
 });
 
-const __h337 = (typeof globalThis !== "undefined" && globalThis.h337) || undefined;
+// Use the factory captured inside the IIFE — works regardless of how the
+// bundler interprets the UMD wrapper (Vite ESM, Rollup CJS, browser global).
+const __h337 = __heatmapFactory;
 if (__h337 && typeof window !== "undefined" && !window.h337) window.h337 = __h337;
 
 // Expose `create` and `register` as named ESM exports too. esbuild's CJS-from-ESM
 // interop returns the module namespace object for `require('heatmap.js')`; without
 // these the leaflet-heatmap plugin would see {default: factory} (no `.create`).
-const create = (cfg) => __h337 && __h337.create(cfg);
-const register = (key, plugin) => __h337 && __h337.register(key, plugin);
+const create = (cfg) => __h337.create(cfg);
+const register = (key, plugin) => __h337.register(key, plugin);
 
 export default __h337;
 export { __h337 as h337, create, register };
