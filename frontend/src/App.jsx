@@ -9,6 +9,7 @@ import VideoPopup from './components/VideoPopup.jsx';
 import DispatchModal from './components/DispatchModal.jsx';
 import CriticalAlert, { playBeep } from './components/CriticalAlert.jsx';
 import MapFocusPopup from './components/MapFocusPopup.jsx';
+import { Analytics } from '@vercel/analytics/react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
@@ -292,6 +293,7 @@ export default function App() {
         apiToken={API_TOKEN}
         onClose={() => setDispatchOpen(false)}
       />
+      <Analytics />
     </>
   );
 }
